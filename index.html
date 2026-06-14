@@ -1,311 +1,773 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Красивая Галерея</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0d1117; 
-            color: #c9d1d9;
-            padding: 20px;
-        }
-        /* Стили для контейнера поиска */
-        .search-container {
-            max-width: 1200px;
-            margin: 0 auto 25px auto;
-            display: flex;
-            justify-content: center;
-        }
-        .search-input {
-            width: 100%;
-            max-width: 500px;
-            padding: 12px 20px;
-            font-size: 1rem;
-            background-color: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            color: #f0f6fc;
-            outline: none;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        .search-input:focus {
-            border-color: #58a6ff;
-            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
-        }
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .gallery-item {
-            position: relative;
-            background: #161b22;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #30363d;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        /* Класс для скрытия элементов при поиске */
-        .gallery-item.hidden {
-            display: none;
-        }
-        .gallery-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            border-color: #58a6ff;
-        }
-        .img-container {
-            width: 100%;
-            height: 200px;
-            overflow: hidden;
-            background: #0d1117;
-            cursor: pointer;
-        }
-        .img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-        .gallery-item:hover .img-container img {
-            transform: scale(1.05);
-        }
-        .item-info {
-            padding: 15px;
-        }
-        .item-info h3 {
-            margin: 0 0 4px 0;
-            font-size: 1.1rem;
-            color: #f0f6fc;
-        }
-        .author-link {
-            display: inline-block;
-            color: #58a6ff;
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-        .author-link:hover {
-            text-decoration: underline;
-        }
-        .item-info p {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #8b949e;
-            line-height: 1.4;
-        }
-        .lightbox {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(10, 12, 16, 0.95);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 9999;
-        }
-        .lightbox.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .lightbox-img {
-            max-width: 90%;
-            max-height: 75vh;
-            border-radius: 8px;
-            box-shadow: 0 0 32px rgba(0,0,0,0.5);
-        }
-        .lightbox-caption {
-            margin-top: 15px;
-            text-align: center;
-            max-width: 80%;
-        }
-        .lightbox-caption h3 {
-            margin: 0 0 4px 0;
-            color: #fff;
-            font-size: 1.3rem;
-        }
-        .lightbox-caption a {
-            color: #58a6ff;
-            text-decoration: none;
-        }
-        .lightbox-caption p {
-            margin: 5px 0 0 0;
-            color: #8b949e;
-        }
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            color: #fff;
-            font-size: 35px;
-            cursor: pointer;
-            user-select: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Прайдленд — Симуляция жизни львов</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #2d2a1e;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
+      padding: 10px;
+      image-rendering: pixelated;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #5c8c46;
+      border: 12px solid #4a3926;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      padding: 10px;
+      max-width: 100%;
+    }
+    canvas {
+      display: block;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+      width: 100%;
+      max-width: 1200px;
+      height: auto;
+      border: 6px solid #3b2d1a;
+      border-radius: 8px;
+      background: #b7a87a;
+      cursor: crosshair;
+    }
+    .panel {
+      width: 100%;
+      max-width: 1200px;
+      background: #4a3926;
+      color: #f5e7c8;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      border-radius: 0 0 12px 12px;
+      font-size: 16px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #1f1a0e;
+      margin-bottom: 5px;
+    }
+    .panel button {
+      background: #c49a2c;
+      border: none;
+      color: #2d2412;
+      font-weight: bold;
+      padding: 8px 18px;
+      margin: 5px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      box-shadow: 0 4px 0 #6b4e1b;
+      transition: 0.1s linear;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .panel button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #6b4e1b;
+    }
+    .info-box {
+      background: #2d2412;
+      padding: 6px 15px;
+      border-radius: 30px;
+      color: #ffd966;
+    }
+    #character-popup {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -20%);
+      background: #fdf4d4;
+      border: 8px solid #755c34;
+      border-radius: 30px;
+      padding: 20px;
+      color: #2d1f0c;
+      width: 380px;
+      max-width: 90vw;
+      box-shadow: 0 25px 50px black;
+      display: none;
+      z-index: 100;
+      font-family: 'Courier New', monospace;
+      image-rendering: pixelated;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #character-popup h3 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      border-bottom: 3px dashed #a6844b;
+    }
+    .stat-bar {
+      background: #4d3a22;
+      height: 12px;
+      width: 100%;
+      border-radius: 10px;
+      margin: 5px 0 12px;
+      overflow: hidden;
+      border: 1px solid #2d1a0c;
+    }
+    .stat-fill {
+      height: 100%;
+      width: 80%;
+      background: #e6b422;
+      transition: width 0.3s;
+    }
+    .lion-portrait {
+      width: 80px;
+      height: 80px;
+      image-rendering: pixelated;
+      border: 3px solid #755c34;
+      border-radius: 10px;
+      float: right;
+      margin-left: 10px;
+      background: #d4b896;
+    }
+    .close-popup {
+      background: #c0392b;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 5px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    .dead-list {
+      max-width: 1200px;
+      background: #1f1a0e;
+      color: #cca77a;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 12px;
+      width: 100%;
+      font-size: 14px;
+      border: 2px solid #4a3926;
+    }
+    .dead-list strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #e6b422;
+    }
+    .dead-entry {
+      background: #3d2c1c;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: inline-block;
+      margin: 3px;
+      border: 1px solid #6b4e1b;
+    }
+    .admin-note {
+      background: #fff3cd;
+      color: #856404;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      font-size: 13px;
+      border: 2px dashed #ffc107;
+      max-width: 1200px;
+      width: 100%;
+    }
+    @media (max-width: 700px) {
+      .panel {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
 </head>
 <body>
 
+<!-- ==================== -->
+<!-- !!! АДМИН-ИНСТРУКЦИЯ -->
+<!-- ==================== -->
+<div class="admin-note" style="max-width:1200px; width:100%;">
+  <strong>🔧 ИНСТРУКЦИЯ ДЛЯ АДМИНИСТРАТОРА (ТЕБЯ):</strong><br>
+  ● <strong>ВСЕ НАСТРОЙКИ НИЖЕ В БЛОКЕ "КОНФИГУРАЦИЯ ЛЬВОВ"</strong> — меняй там данные.<br>
+  ● <strong>ИМЕНА ФАЙЛОВ ИЗОБРАЖЕНИЙ:</strong> клади картинки в папку <code>images/</code> рядом с index.html.<br>
+  ● <strong>ФОРМАТ:</strong> PNG (рекомендуется), фон — прозрачный или однотонный (лучше прозрачный).<br>
+  ● <strong>РАЗМЕР:</strong> 64x64 пикселей для спрайта на карте, 128x128 для портрета (можно одну и ту же).<br>
+  ● <strong>ЧТОБЫ ДОБАВИТЬ ЛЬВА:</strong> скопируй блок одного льва и вставь новые данные.<br>
+  ● <strong>ЧТОБЫ УДАЛИТЬ/УБИТЬ ЛЬВА:</strong> поставь <code>alive: false</code> и укажи <code>deathReason</code>.<br>
+  ● <strong>ДЕТЁНЫШ:</strong> поставь <code>hasCub: true</code> — появится значок в инфо.<br>
+  <strong>⚠️ ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ, ИНАЧЕ САЙТ СЛОМАЕТСЯ!</strong>
+</div>
 
-
-
-
-
-
-
-
-
-
-    <!-- Поле поиска -->
-    <div class="search-container">
-        <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию, автору или дате...">
+<div id="game-container">
+  <div class="panel">
+    <span>🌍 ПРАЙДЛЕНД • День <span id="dayCounter">1</span></span>
+    <span class="info-box">🦁 Живых: <span id="popCount">5</span> | 💀 Мёртвых: <span id="deadCount">0</span></span>
+    <div>
+      <button id="nextDayBtn">⏳ Следующий день</button>
+      <button id="resetBtn">🔄 Сброс симуляции</button>
     </div>
+  </div>
+  <canvas id="gameCanvas" width="1000" height="600"></canvas>
+  <div style="color:#f5e0b0; margin-top: 8px; font-size: 14px;">🖱️ Кликни на льва, чтобы узнать его историю и автора</div>
+</div>
 
-    <div class="gallery-grid" id="galleryGrid"></div>
+<!-- Всплывающее окно -->
+<div id="character-popup">
+  <button class="close-popup" id="closePopup">✖</button>
+  <!-- !!! ПОРТРЕТ ЛЬВА (АВТОМАТИЧЕСКИ ИЗ ПОЛЯ portrait) -->
+  <img id="popupPortrait" class="lion-portrait" src="" alt="портрет" style="display:none;">
+  <h3 id="popupName"></h3>
+  <p><strong>👤 Автор:</strong> <span id="popupAuthor"></span></p>
+  <p><strong>🏠 Прайд:</strong> <span id="popupPride"></span></p>
+  <p><strong>📋 Статус:</strong> <span id="popupStatus"></span></p>
+  <p><strong>🎭 Настроение:</strong> <span id="popupMood"></span></p>
+  <p><strong>📅 Возраст:</strong> <span id="popupAge"></span> лет</p>
+  <p><strong>⚥ Пол:</strong> <span id="popupGender"></span></p>
+  <p>🍖 Голод: <span id="popupHunger"></span>%</p>
+  <div class="stat-bar"><div class="stat-fill" id="hungerFill" style="width: 70%;"></div></div>
+  <p>💧 Жажда: <span id="popupThirst"></span>%</p>
+  <div class="stat-bar"><div class="stat-fill" id="thirstFill" style="width: 50%; background: #3498db;"></div></div>
+  <p>❤️ Здоровье: <span id="popupHealth"></span>%</p>
+  <div class="stat-bar"><div class="stat-fill" id="healthFill" style="width: 90%; background: #e74c3c;"></div></div>
+  <p><strong>🧠 Память:</strong> <em>«<span id="popupMemory"></span>»</em></p>
+  <p style="margin-top:10px;"><strong>🐾 Детёныш:</strong> <span id="popupCub"></span></p>
+  <p style="font-size:11px; color:#755c34; margin-top:8px;"><strong>🆔 ID:</strong> <span id="popupId"></span></p>
+</div>
 
-    <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
-        <span class="close-btn">&times;</span>
-        <img class="lightbox-img" id="lightboxImg" src="" alt="Просмотр">
-        <div class="lightbox-caption" id="lightboxCaption"></div>
-    </div>
+<!-- Список погибших -->
+<div class="dead-list" id="deadListContainer">
+  <strong>💀 ПАНТЕОН ПАВШИХ:</strong>
+  <div id="deadEntries">Пока все живы</div>
+</div>
 
-    <script>
-        const arts = [
-            {
-                img: "Screenshot_9.png", 
-                title: "Прототип родителей Шарптанг", 
-                authorName: "Star Harlen",
-                authorUrl: "https://t.me/My_pride_2/8269", 
-                desc: "3 марта 2026 года, 02:14"
-            },
-            {
-                img: "Screenshot_10.png", 
-                title: "Прототип родителей Прауда", 
-                authorName: "Star Harlen",
-                authorUrl: "https://t.me/My_pride_2/8268", 
-                desc: "3 марта 2026 года, 01:17"
-            },
-            {
-                img: "Screenshot_11.png", 
-                title: "Набросок дизайна матери Мунстрайк", 
-                authorName: "Star Harlen",
-                authorUrl: "https://t.me/My_pride_2/8265", 
-                desc: "3 марта 2026 года, 00:25"
-            },
-            {
-                img: "Screenshot_13.png", 
-                title: "давно ничего не было с девочками, да и с остальными дамами тот же касяк.. Что-ж, у мальчиков сразу две тёти, одна бабушка и одна прабабушка", 
-                authorName: "Star Harlen",
-                authorUrl: "https://t.me/My_pride_2/8237", 
-                desc: "#Вотерхантер #Сайленсталк #Лайтхантер, 16 февраля 2026 года, 03:06"
-            },
-           {
-    img: "Screenshot_15.png",
-    title: '"Моя мать рухлядь которая не способна поймать даже муху" сказал бы сын ничто под влиянием Прауда..если бы Ничто не решилась спасти брата.',
-    authorName: "Star Harlen",
-    authorUrl: "https://t.me",
-    desc: "14 февраля 2026 года, 02:17"
-},
-             {
-                img: "Screenshot_16.png", 
-                title: "Если бы...", 
-                authorName: "Star Harlen",
-                authorUrl: "https://t.me/My_pride_2/8111", 
-                desc: "#Если #Спарк #Файер #Ничто #Перо,14 сентября 2025 года, 07:35"
-            },
-             {
-                img: "Screenshot_17.png", 
-                title: "Последний разговор между Флайт и Танглом...Тангл не хотел оставлять Фаера пока тот не найдет свой прайд, чего не скажешь о поступке второго...", 
-                authorName: "Star Harlen",
-                authorUrl: "https://t.me/My_pride_2/8070", 
-                desc: "#Тангл #Флайт #Бид,4 августа 2025 года,  20:31"
-            },
-             {
-                img: "Screenshot_18.png", 
-                title: "—он похож на тебя—у него нет ничего от меня, он просто копия его отца.", 
-                authorName: "Mefoday",
-                authorUrl: "https://t.me/My_pride_2/8089", 
-                desc: "Недавний артец для Леди и ее партнёрши(ее ведь так можно называть?) и мини БаркИ скетч с Дримом в ближайшее время дропну тот аск...#Мать_Баркмейна #Леди,25 августа 2025 года, 02:17"
-            },
-            {
-    img: "Screenshot_15.png",
-    title: '"Моя мать рухлядь которая не способна поймать даже муху" сказал бы сын ничто под влиянием Прауда..если бы Ничто не решилась спасти брата.',
-    authorName: "Star Harlen",
-    authorUrl: "https://t.me",
-    desc: "14 февраля 2026 года, 02:17"
-},
-        ];
+<script>
+  (function() {
+    // ============================================================
+    // !!! КОНФИГУРАЦИЯ КАРТЫ — МЕНЯЙ КООРДИНАТЫ И НАЗВАНИЯ ЛОКАЦИЙ
+    // ============================================================
+    const MAP_WIDTH = 1000;
+    const MAP_HEIGHT = 600;
 
-        const galleryGrid = document.getElementById('galleryGrid');
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImg = document.getElementById('lightboxImg');
-        const lightboxCaption = document.getElementById('lightboxCaption');
-        const searchInput = document.getElementById('searchInput');
+    // !!! ЛОКАЦИИ НА КАРТЕ (x,y — центр локации)
+    const locations = [
+      { name: "СКАЛА СОВЕТА",     x: 200, y: 140, type: "pride_spot", color: "#8b7355" },
+      { name: "ВОДОПОЙ ЖИЗНИ",    x: 750, y: 110, type: "water",       color: "#4a90d9" },
+      { name: "САВАННА ТЕНЕЙ",    x: 500, y: 430, type: "pride_spot", color: "#6b8c42" },
+      { name: "ХОЛМ ОДИНОКИХ",    x: 80,  y: 470, type: "solitude",   color: "#8c7a6b" },
+      { name: "ГРАНИЦА КОГТЕЙ",   x: 860, y: 440, type: "battlefield",color: "#a0522d" },
+      { name: "РОЩА ШЕПЧУЩИХ",    x: 400, y: 190, type: "pride_spot", color: "#5c8a3c" },
+      { name: "РУИНЫ КОРОЛЕЙ",    x: 630, y: 320, type: "pride_spot", color: "#9b8c6b" },
+      { name: "ИСТОЧНИК ЗВЁЗД",   x: 920, y: 250, type: "water",       color: "#5b9bd5" },
+      { name: "ЛОГОВО ИЗГНАННИКОВ",x: 280, y: 520, type: "solitude",   color: "#6b5b4a" }
+    ];
 
-        // Генерируем карточки
-        arts.forEach((art, index) => {
-            const item = document.createElement('div');
-            item.className = 'gallery-item';
-            item.innerHTML = `
-                <div class="img-container" onclick="openLightbox(${index})">
-                    <img src="${art.img}" alt="${art.title}">
-                </div>
-                <div class="item-info">
-                    <h3>${art.title}</h3>
-                    <a href="${art.authorUrl}" target="_blank" class="author-link">Автор: ${art.authorName}</a>
-                    <p>${art.desc}</p>
-                </div>
-            `;
-            galleryGrid.appendChild(item);
-        });
+    // ============================================================
+    // !!! ГЛАВНЫЙ МАССИВ ЛЬВОВ — ВСТАВЛЯЙ СЮДА НОВЫХ ПЕРСОНАЖЕЙ !!!
+    // ============================================================
+    // КАЖДЫЙ ЛЕВ — ЭТО ОБЪЕКТ СО СЛЕДУЮЩИМИ ПОЛЯМИ:
+    // 
+    // id:         УНИКАЛЬНЫЙ ID (например "lion1", "lion_custom_1")
+    // name:       ИМЯ ЛЬВА (строка)
+    // author:     АВТОР / ХОЗЯИН ПЕРСОНАЖА (строка)
+    // pride:      НАЗВАНИЕ ПРАЙДА (должно совпадать с именем локации или "Одиночка")
+    // status:     РОЛЬ В ПРАЙДЕ ("Вожак", "Охотница", "Разведчик", "Новичок", "Изгнанник" и т.д.)
+    // mood:       НАСТРОЕНИЕ ("Величественный", "Грустная", "Злой" — что угодно)
+    // hunger:     ГОЛОД от 0 до 100 (100 = сыт)
+    // thirst:     ЖАЖДА от 0 до 100 (100 = напился)
+    // health:     ЗДОРОВЬЕ от 0 до 100 (0 = смерть)
+    // memory:     МЫСЛИ / ПАМЯТЬ (строка в кавычках)
+    // x, y:       КООРДИНАТЫ НА КАРТЕ (поставь рядом с локацией его прайда)
+    // hasCub:     ЕСТЬ ЛИ ДЕТЁНЫШ (true/false) — только через админа!
+    // isMale:     ПОЛ: true = самец (с гривой), false = самка
+    // age:        ВОЗРАСТ В ГОДАХ (число)
+    // alive:      ЖИВ ИЛИ МЁРТВ (true/false)
+    // deathReason:ПРИЧИНА СМЕРТИ (только если alive: false) — "от голода", "в драке", "старость"
+    // portrait:   !!! ПУТЬ К ФАЙЛУ ИЗОБРАЖЕНИЯ (например "images/lion1.png")
+    // ============================================================
 
-        // Логика фильтрации при вводе в поиск
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            const items = galleryGrid.getElementsByClassName('gallery-item');
+    let lions = [
+      // ========================
+      // !!! ПРИМЕР ЛЬВА №1 !!!
+      // ========================
+      {
+        id: "lion_askari",
+        name: "Аскари",
+        author: "ZooKeeper",            // !!! ИМЯ АВТОРА
+        pride: "СКАЛА СОВЕТА",
+        status: "Вожак",
+        mood: "Величественный",
+        hunger: 85,
+        thirst: 90,
+        health: 95,
+        memory: "Я охраняю эти земли. Никто не пройдёт через Скалу Совета.",
+        x: 215,
+        y: 135,
+        hasCub: false,
+        isMale: true,
+        age: 7,
+        alive: true,
+        deathReason: "",
+        portrait: "images/askari.png"   // !!! ПУТЬ К КАРТИНКЕ (положи в папку images/)
+      },
 
-            arts.forEach((art, index) => {
-                const matchTitle = art.title.toLowerCase().includes(query);
-                const matchAuthor = art.authorName.toLowerCase().includes(query);
-                const matchDesc = art.desc.toLowerCase().includes(query);
+      // ========================
+      // !!! ПРИМЕР ЛЬВА №2 !!!
+      // ========================
+      {
+        id: "lion_nala",
+        name: "Нала",
+        author: "SafariHeart",          // !!! АВТОР
+        pride: "СКАЛА СОВЕТА",
+        status: "Охотница",
+        mood: "Сосредоточена",
+        hunger: 60,
+        thirst: 70,
+        health: 88,
+        memory: "Сегодня хороший день для охоты. Детёныш ждёт меня.",
+        x: 185,
+        y: 155,
+        hasCub: true,                   // !!! ДЕТЁНЫШ ЕСТЬ (ставишь true если админ разрешил)
+        isMale: false,
+        age: 5,
+        alive: true,
+        deathReason: "",
+        portrait: "images/nala.png"     // !!! КАРТИНКА
+      },
 
-                if (matchTitle || matchAuthor || matchDesc) {
-                    items[index].classList.remove('hidden');
-                } else {
-                    items[index].classList.add('hidden');
-                }
-            });
-        });
+      // ========================
+      // !!! ПРИМЕР ЛЬВА №3 !!!
+      // ========================
+      {
+        id: "lion_kopa",
+        name: "Копа",
+        author: "WildSpirit",
+        pride: "САВАННА ТЕНЕЙ",
+        status: "Разведчик",
+        mood: "Насторожен",
+        hunger: 45,
+        thirst: 50,
+        health: 72,
+        memory: "Чужаки замечены у Границы Когтей. Надо предупредить прайд.",
+        x: 510,
+        y: 425,
+        hasCub: false,
+        isMale: true,
+        age: 4,
+        alive: true,
+        deathReason: "",
+        portrait: "images/kopa.png"
+      },
 
-        function openLightbox(index) {
-            const art = arts[index];
-            lightboxImg.src = art.img;
-            lightboxCaption.innerHTML = `
-                <h3>${art.title}</h3>
-                <a href="${art.authorUrl}" target="_blank">Автор: ${art.authorName}</a>
-                <p>${art.desc}</p>
-            `;
-            lightbox.classList.add('active');
+      // ========================
+      // !!! ПРИМЕР ЛЬВА №4 (ОДИНОЧКА) !!!
+      // ========================
+      {
+        id: "lion_zuri",
+        name: "Зури",
+        author: "MoonLion",
+        pride: "Одиночка",              // !!! ОДИНОЧКА — НЕ ПРИНАДЛЕЖИТ НИ К КАКОМУ ПРАЙДУ
+        status: "Изгнанница",
+        mood: "Грустная",
+        hunger: 30,
+        thirst: 35,
+        health: 50,
+        memory: "Меня выгнали из прайда. Я ищу новый дом...",
+        x: 75,
+        y: 465,
+        hasCub: false,
+        isMale: false,
+        age: 3,
+        alive: true,
+        deathReason: "",
+        portrait: "images/zuri.png"
+      },
+
+      // ========================
+      // !!! ПРИМЕР ЛЬВА №5 !!!
+      // ========================
+      {
+        id: "lion_mahadi",
+        name: "Махади",
+        author: "GoldenMane",
+        pride: "РУИНЫ КОРОЛЕЙ",
+        status: "Старейшина",
+        mood: "Мудрый",
+        hunger: 70,
+        thirst: 75,
+        health: 55,
+        memory: "Руины помнят великих королей прошлого. Я — последний из них.",
+        x: 640,
+        y: 310,
+        hasCub: false,
+        isMale: true,
+        age: 13,
+        alive: true,
+        deathReason: "",
+        portrait: "images/mahadi.png"
+      },
+
+      // ========================
+      // !!! ПРИМЕР МЁРТВОГО ЛЬВА (уже погиб, отображается в пантеоне) !!!
+      // ========================
+      {
+        id: "lion_tano",
+        name: "Тано",
+        author: "DarkMane",
+        pride: "ГРАНИЦА КОГТЕЙ",
+        status: "Воин",
+        mood: "Мёртв",
+        hunger: 0,
+        thirst: 0,
+        health: 0,
+        memory: "Я погиб, защищая прайд.",
+        x: 860,
+        y: 440,
+        hasCub: false,
+        isMale: true,
+        age: 9,
+        alive: false,                   // !!! МЁРТВ
+        deathReason: "Пал в битве с прайдом Саванны Теней",  // !!! ПРИЧИНА СМЕРТИ
+        portrait: "images/tano.png"
+      }
+
+      // =====================================================
+      // !!! ЧТОБЫ ДОБАВИТЬ НОВОГО ЛЬВА — СКОПИРУЙ БЛОК ВЫШЕ !!!
+      // !!! И ВСТАВЬ ЕГО СЮДА, ПЕРЕД ЗАКРЫВАЮЩЕЙ СКОБКОЙ ]  !!!
+      // !!! НЕ ЗАБУДЬ ЗАПЯТУЮ МЕЖДУ БЛОКАМИ !!!
+      // =====================================================
+    ];
+
+    // ============================================================
+    // НИЖЕ ТЕХНИЧЕСКИЙ КОД — НЕ ТРОГАЙ, ЕСЛИ НЕ УВЕРЕН
+    // ============================================================
+    let deadLions = [];
+    let currentDay = 1;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // Загружаем изображения
+    const imageCache = {};
+    function preloadImages() {
+      lions.forEach(lion => {
+        if (lion.portrait && lion.portrait.trim() !== '') {
+          const img = new Image();
+          img.src = lion.portrait;
+          imageCache[lion.id] = img;
+        }
+      });
+    }
+
+    // Разделяем живых и мёртвых при инициализации
+    function initLions() {
+      deadLions = lions.filter(l => !l.alive);
+      lions = lions.filter(l => l.alive);
+      preloadImages();
+    }
+
+    function simulateDay() {
+      if (lions.length === 0) {
+        alert("⚠️ Все львы мертвы. Нажмите «Сброс симуляции» чтобы начать заново.");
+        return;
+      }
+
+      lions.forEach(lion => {
+        // Естественная убыль
+        lion.hunger = Math.max(0, lion.hunger - (4 + Math.floor(Math.random() * 12)));
+        lion.thirst = Math.max(0, lion.thirst - (3 + Math.floor(Math.random() * 10)));
+        
+        // Одиночки страдают сильнее
+        if (lion.pride === 'Одиночка') {
+          lion.hunger = Math.max(0, lion.hunger - 6);
+          lion.thirst = Math.max(0, lion.thirst - 4);
+          if (lion.mood !== 'Мёртв') lion.mood = 'Подавлен(а)';
+          lion.memory = 'Одиночество истощает...';
         }
 
-        function closeLightbox(event) {
-            if (event.target.tagName !== 'IMG' && event.target.tagName !== 'A') {
-                lightbox.classList.remove('active');
+        // Водопой — если рядом с водой, восстанавливает жажду
+        locations.forEach(loc => {
+          if (loc.type === 'water' && Math.abs(lion.x - loc.x) < 40 && Math.abs(lion.y - loc.y) < 40) {
+            lion.thirst = Math.min(100, lion.thirst + 25);
+            if (lion.mood === 'Подавлен(а)') lion.mood = 'Спокойный(ая)';
+          }
+        });
+
+        // Голод/жажда = урон здоровью
+        if (lion.hunger <= 15) {
+          lion.health -= 12;
+          lion.mood = 'Умирает от голода';
+          lion.memory = 'Я так голоден...';
+        }
+        if (lion.thirst <= 15) {
+          lion.health -= 10;
+          lion.mood = 'Обезвожен(а)';
+          lion.memory = 'Воды... ни капли...';
+        }
+
+        // Драки между прайдами
+        if (lion.pride !== 'Одиночка' && Math.random() < 0.2) {
+          const enemies = lions.filter(l => l.alive && l.pride !== lion.pride && l.pride !== 'Одиночка');
+          if (enemies.length > 0 && Math.random() < 0.4) {
+            const damage = 10 + Math.floor(Math.random() * 20);
+            lion.health -= damage;
+            lion.mood = 'Ранен(а) в бою';
+            lion.memory = `Битва с прайдом ${enemies[0].pride} была жестокой. Я получил(а) урон.`;
+            // Ответный урон случайному врагу
+            if (enemies[0]) {
+              enemies[0].health -= Math.floor(damage * 0.7);
+              if (enemies[0].health <= 0) enemies[0].alive = false;
             }
+          }
         }
-    </script>
+
+        // Смерть
+        if (lion.health <= 0) {
+          lion.alive = false;
+          if (!lion.deathReason) lion.deathReason = 'Истощение и раны';
+          lion.mood = 'Мёртв';
+          return;
+        }
+
+        // Восстановление здоровья
+        if (lion.hunger > 55 && lion.thirst > 55 && lion.health < 100) {
+          lion.health = Math.min(100, lion.health + 4);
+        }
+
+        // Одиночка может быть принят в прайд
+        if (lion.pride === 'Одиночка' && lion.health > 50 && Math.random() < 0.08) {
+          const prideLocations = locations.filter(l => l.type === 'pride_spot');
+          if (prideLocations.length > 0) {
+            const chosen = prideLocations[Math.floor(Math.random() * prideLocations.length)];
+            lion.pride = chosen.name;
+            lion.status = 'Новичок';
+            lion.mood = 'Надеющийся';
+            lion.memory = `Меня приняли в прайд «${chosen.name}»! Новая жизнь начинается.`;
+            lion.x = chosen.x + (Math.random() - 0.5) * 40;
+            lion.y = chosen.y + (Math.random() - 0.5) * 40;
+          }
+        }
+
+        // Старость увеличивает шанс смерти
+        if (lion.age > 11 && Math.random() < 0.05) {
+          lion.health -= 25;
+          lion.memory = 'Старость берёт своё...';
+        }
+
+        // Детёныш растёт (каждые 10 дней +1 год)
+        if (lion.hasCub && currentDay % 10 === 0 && lion.age < 15) {
+          lion.age += 1;
+        }
+      });
+
+      // Перенос мёртвых
+      const newlyDead = lions.filter(l => !l.alive);
+      deadLions.push(...newlyDead);
+      lions = lions.filter(l => l.alive);
+
+      currentDay++;
+      updateUI();
+      drawMap();
+    }
+
+    function drawMap() {
+      ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+      
+      // Фон — пиксельная саванна
+      ctx.fillStyle = '#c2a65c';
+      ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+      
+      // Трава (пиксельная)
+      for (let i = 0; i < 300; i++) {
+        const gx = Math.floor(Math.random() * MAP_WIDTH / 4) * 4;
+        const gy = Math.floor(Math.random() * MAP_HEIGHT / 4) * 4;
+        ctx.fillStyle = Math.random() > 0.5 ? '#8fbc3b' : '#6d9a2c';
+        ctx.fillRect(gx, gy, 4, 4);
+      }
+
+      // Локации
+      locations.forEach(loc => {
+        ctx.fillStyle = loc.color;
+        ctx.fillRect(loc.x - 10, loc.y - 10, 20, 20);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px "Courier New"';
+        ctx.textAlign = 'center';
+        ctx.fillText(loc.name, loc.x, loc.y - 16);
+        ctx.textAlign = 'start';
+        
+        // Иконка типа
+        if (loc.type === 'water') {
+          ctx.fillStyle = '#87ceeb';
+          ctx.fillRect(loc.x - 4, loc.y - 4, 8, 8);
+        } else if (loc.type === 'battlefield') {
+          ctx.fillStyle = '#ff4444';
+          ctx.fillRect(loc.x - 3, loc.y - 3, 6, 6);
+        }
+      });
+
+      // Львы
+      lions.forEach(lion => {
+        const lx = Math.round(lion.x);
+        const ly = Math.round(lion.y);
+        
+        // Попытка отрисовать спрайт из файла
+        if (imageCache[lion.id] && imageCache[lion.id].complete && imageCache[lion.id].naturalWidth > 0) {
+          ctx.drawImage(imageCache[lion.id], lx - 12, ly - 14, 28, 28);
+        } else {
+          // Пиксельный спрайт-заглушка
+          ctx.fillStyle = lion.isMale ? '#c99b3b' : '#dbb45c';
+          ctx.fillRect(lx - 7, ly - 5, 14, 12);
+          if (lion.isMale) {
+            ctx.fillStyle = '#7a4d1a';
+            ctx.fillRect(lx - 9, ly - 8, 18, 7);
+          }
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(lx - 3, ly - 2, 3, 3);
+          ctx.fillRect(lx + 2, ly - 2, 3, 3);
+          ctx.fillStyle = '#000';
+          ctx.fillRect(lx - 2, ly - 1, 2, 2);
+          ctx.fillRect(lx + 3, ly - 1, 2, 2);
+        }
+        
+        // Индикатор здоровья (цветная точка)
+        if (lion.health < 30) ctx.fillStyle = '#ff0000';
+        else if (lion.health < 60) ctx.fillStyle = '#ffaa00';
+        else ctx.fillStyle = '#00ff00';
+        ctx.fillRect(lx - 4, ly + 8, 8, 3);
+        
+        // Имя
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px "Courier New"';
+        ctx.textAlign = 'center';
+        ctx.fillText(lion.name, lx, ly - 16);
+        ctx.textAlign = 'start';
+        
+        // Значок детёныша
+        if (lion.hasCub) {
+          ctx.fillStyle = '#ff69b4';
+          ctx.fillRect(lx + 6, ly - 10, 4, 4);
+          ctx.fillText('🐾', lx + 8, ly - 6);
+        }
+      });
+    }
+
+    function showLionInfo(lion) {
+      document.getElementById('popupName').textContent = lion.name;
+      document.getElementById('popupAuthor').textContent = lion.author;
+      document.getElementById('popupPride').textContent = lion.pride;
+      document.getElementById('popupStatus').textContent = lion.status;
+      document.getElementById('popupMood').textContent = lion.mood;
+      document.getElementById('popupAge').textContent = lion.age;
+      document.getElementById('popupGender').textContent = lion.isMale ? 'Самец ♂' : 'Самка ♀';
+      document.getElementById('popupHunger').textContent = lion.hunger;
+      document.getElementById('popupThirst').textContent = lion.thirst;
+      document.getElementById('popupHealth').textContent = lion.health;
+      document.getElementById('popupMemory').textContent = lion.memory;
+      document.getElementById('popupCub').textContent = lion.hasCub ? 'Да 🐾 (запрошено через админа)' : 'Нет';
+      document.getElementById('popupId').textContent = lion.id;
+      
+      document.getElementById('hungerFill').style.width = lion.hunger + '%';
+      document.getElementById('thirstFill').style.width = lion.thirst + '%';
+      document.getElementById('healthFill').style.width = lion.health + '%';
+      
+      // Портрет
+      const portraitImg = document.getElementById('popupPortrait');
+      if (lion.portrait && lion.portrait.trim() !== '') {
+        portraitImg.src = lion.portrait;
+        portraitImg.style.display = 'block';
+      } else {
+        portraitImg.style.display = 'none';
+      }
+      
+      document.getElementById('character-popup').style.display = 'block';
+    }
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = MAP_WIDTH / rect.width;
+      const scaleY = MAP_HEIGHT / rect.height;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+      
+      let clicked = null;
+      for (let lion of lions) {
+        if (Math.abs(mouseX - lion.x) < 16 && Math.abs(mouseY - lion.y) < 16) {
+          clicked = lion;
+          break;
+        }
+      }
+      if (clicked) showLionInfo(clicked);
+    });
+
+    document.getElementById('closePopup').addEventListener('click', () => {
+      document.getElementById('character-popup').style.display = 'none';
+    });
+
+    document.getElementById('nextDayBtn').addEventListener('click', simulateDay);
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      // Перезагружаем из исходного массива (сбрасывая смерти)
+      const allLions = [...lions, ...deadLions].map(l => ({
+        ...l,
+        alive: true,
+        health: l.health === 0 ? 50 : l.health,
+        hunger: l.hunger === 0 ? 50 : l.hunger,
+        thirst: l.thirst === 0 ? 50 : l.thirst,
+        mood: 'Обновлён(а)',
+        memory: 'Цикл начался заново.',
+        deathReason: ''
+      }));
+      lions = allLions;
+      deadLions = [];
+      currentDay = 1;
+      preloadImages();
+      updateUI();
+      drawMap();
+    });
+
+    function updateDeadList() {
+      const container = document.getElementById('deadEntries');
+      if (deadLions.length === 0) {
+        container.innerHTML = '<span style="color:#8fbc3b;">✦ Пока все живы ✦</span>';
+        return;
+      }
+      container.innerHTML = deadLions.map(d => 
+        `<span class="dead-entry">💀 <strong>${d.name}</strong> (автор: ${d.author}) — ${d.deathReason || 'неизвестная причина'}</span>`
+      ).join('');
+      document.getElementById('deadCount').textContent = deadLions.length;
+    }
+
+    function updateUI() {
+      document.getElementById('dayCounter').textContent = currentDay;
+      document.getElementById('popCount').textContent = lions.length;
+      document.getElementById('deadCount').textContent = deadLions.length;
+      updateDeadList();
+    }
+
+    // Запуск
+    initLions();
+    drawMap();
+    updateUI();
+
+    // Перерисовка при загрузке всех изображений
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        preloadImages();
+        drawMap();
+      }, 500);
+    });
+
+  })();
+</script>
+
 </body>
 </html>
-
