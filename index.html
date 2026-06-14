@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Прайдленд — Эпическая симуляция саванны</title>
+  <title>Прайдленд — Полная экосистема саванны</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -149,6 +149,8 @@
     .action-btn.success:hover { background: #3d7a2e; }
     .action-btn.warning { background: #b8860b; color: #ffffaa; }
     .action-btn.warning:hover { background: #daa520; }
+    .action-btn.info { background: #2980b9; color: #ccffff; }
+    .action-btn.info:hover { background: #3498db; }
     
     .decision-modal {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -216,7 +218,7 @@
     
     <div class="event-log" id="eventLog">
       <strong>📜 СОБЫТИЯ:</strong>
-      <div id="logEntries"><div class="entry info">🌅 Саванна пробуждается... Карта увеличена вдвое!</div></div>
+      <div id="logEntries"><div class="entry info">🌅 Саванна пробуждается... Безгривые собираются в группы у Логова Изгнанников!</div></div>
     </div>
     
     <div class="dead-list" id="deadListContainer"><strong>💀 ПАНТЕОН ПАВШИХ:</strong><div id="deadEntries">Пока все живы</div></div>
@@ -263,7 +265,7 @@
 
 <script>
 (function() {
-  console.log("🟢 ПРАЙДЛЕНД ЗАПУЩЕН — УВЕЛИЧЕННАЯ КАРТА, СТАРОСТЬ, БОЛЕЗНИ, СОЗДАНИЕ ПРАЙДОВ");
+  console.log("🟢 ПРАЙДЛЕНД ЗАПУЩЕН — ГРУППЫ БЕЗГРИВЫХ, ПОИСК ПРАЙДА/ПАРТНЁРА");
 
   var MAP_WIDTH = 3200;
   var MAP_HEIGHT = 2000;
@@ -295,7 +297,6 @@
   function getRandomEyes() { return EYE_COLORS[Math.floor(Math.random() * EYE_COLORS.length)]; }
   function getRandomMarking() { return SPECIAL_MARKINGS[Math.floor(Math.random() * SPECIAL_MARKINGS.length)]; }
 
-  // Увеличенные локации
   var locations = [
     { name: "СКАЛА СОВЕТА", x: 600, y: 440, type: "pride_spot", color: "#8b7355", radius: 200 },
     { name: "САВАННА ТЕНЕЙ", x: 1600, y: 1300, type: "pride_spot", color: "#6b8c42", radius: 200 },
@@ -320,7 +321,7 @@
     { name: "РОЩА ДУХОВ", x: 1100, y: 300, type: "forest", color: "#3a6b28", radius: 120 },
     { name: "ХОЛМ ОДИНОКИХ", x: 260, y: 1400, type: "solitude", color: "#8c7a6b", radius: 90 },
     { name: "ГРАНИЦА КОГТЕЙ", x: 2900, y: 1600, type: "battlefield", color: "#a0522d", radius: 120 },
-    { name: "ЛОГОВО ИЗГНАННИКОВ", x: 1900, y: 400, type: "solitude", color: "#6b5b4a", radius: 90 }
+    { name: "ЛОГОВО ИЗГНАННИКОВ", x: 1900, y: 400, type: "rogue_den", color: "#6b5b4a", radius: 150 }
   ];
 
   var preyAnimals = [];
@@ -345,7 +346,7 @@
       carrying:null, huntCooldown:0, defending:false, patrolTarget:null,
       coatColor:coatColor||getRandomCoat(), eyeColor:eyeColor||getRandomEyes(), marking:marking||getRandomMarking(),
       traits:{strength:30+Math.floor(Math.random()*70),speed_trait:30+Math.floor(Math.random()*70),intelligence:30+Math.floor(Math.random()*70),charisma:30+Math.floor(Math.random()*70),fertility:30+Math.floor(Math.random()*70)},
-      ageDays: 0, inHunt: false, huntTarget: null, isHunting: false, disease: 0, foundingPride: null, helpingYoung: false
+      ageDays: 0, inHunt: false, huntTarget: null, isHunting: false, disease: 0, foundingPride: null, helpingYoung: false, rogueGroup: null
     };
   }
 
@@ -365,11 +366,11 @@
     lions.push(createLion("lion_mahadi","Махади","GoldenMane","РУИНЫ КОРОЛЕЙ","Старейшина",false,65,70,55,true,13,false,2120,940,"images/mahadi.png",0.2,"elder",false,null,null,COAT_COLORS[4],"Серые","Куцый хвост"));
     lions.push(createLion("lion_zara","Зара","GoldenMane","РУИНЫ КОРОЛЕЙ","Охотница",false,60,65,78,false,4,false,2080,980,"images/nala.png",0.32,"hunter",false,null,null,COAT_COLORS[11],"Ореховые","Нет особых примет"));
     
-    lions.push(createLion("lion_zuri","Зури","MoonLion","Одиночка","Изгнанница",false,40,45,55,false,3,false,240,1360,"images/zuri.png",0.28,"loner",false,null,null,COAT_COLORS[9],"Голубые","Гетерохромия"));
+    lions.push(createLion("lion_zuri","Зури","MoonLion","Одиночка","Изгнанница",false,40,45,55,false,3,false,260,1400,"images/zuri.png",0.28,"loner",false,null,null,COAT_COLORS[9],"Голубые","Гетерохромия"));
     lions.push(createLion("lion_kairo","Кайро","Саванна","Одиночка","Странник",false,50,55,65,true,4,false,1000,1000,"images/tayo.png",0.28,"scout",false,null,null,COAT_COLORS[0],"Золотые","Чёрная грива"));
     
-    lions.push(createLion("rogue_scar","Шрам","Система","Безгривый","Безгривый захватчик",true,55,65,85,true,10,false,360,180,"images/rogue.png",0.25,"warrior",false,null,null,COAT_COLORS[2],"Жёлтые","Шрам на носу"));
-    lions.push(createLion("rogue_fang","Клык","Система","Безгривый","Безгривый захватчик",true,50,60,78,true,8,false,2800,1400,"images/rogue.png",0.25,"warrior",false,null,null,COAT_COLORS[8],"Карие","Рваное ухо"));
+    lions.push(createLion("rogue_scar","Шрам","Система","Безгривый","Безгривый захватчик",true,55,65,85,true,10,false,1850,380,"images/rogue.png",0.25,"warrior",false,null,null,COAT_COLORS[2],"Жёлтые","Шрам на носу"));
+    lions.push(createLion("rogue_fang","Клык","Система","Безгривый","Безгривый захватчик",true,50,60,78,true,8,false,1950,420,"images/rogue.png",0.25,"warrior",false,null,null,COAT_COLORS[8],"Карие","Рваное ухо"));
     
     for (var i = 0; i < lions.length; i++) {
       if (lions[i].isCub) lions[i].ageDays = 0;
@@ -385,7 +386,7 @@
       { name: "Газель", emoji: "🐐", speed: 0.35, nutrition: 20, evasion: 0.5 },
       { name: "Кабан", emoji: "🐗", speed: 0.2, nutrition: 30, evasion: 0.3, danger: 8 }
     ];
-    for (var i = 0; i < 24; i++) {
+    for (var i = 0; i < 28; i++) {
       var t = types[Math.floor(Math.random()*5)];
       preyAnimals.push({
         name: t.name, emoji: t.emoji, speed: t.speed, nutrition: t.nutrition,
@@ -485,172 +486,239 @@
 
   function distance(a, b) { return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)); }
 
-  // Функция создания прайда для одиночки
-  function createOwnPride(lion) {
-    if (lion.pride !== 'Одиночка' && lion.pride !== 'Безгривый') {
-      addEvent("info", "❌ " + lion.name + " уже в прайде!");
-      return;
-    }
-    if (!lion.isMale) {
-      addEvent("info", "❌ Только самец может основать прайд!");
-      return;
-    }
-    
-    var territories = [];
-    for (var i = 0; i < locations.length; i++) {
-      if (locations[i].type === 'pride_spot') {
-        territories.push(locations[i]);
-      }
-    }
-    
-    showTerritoryChoice(lion, territories);
-  }
-  
-  function showTerritoryChoice(lion, territories) {
-    if (decisionBlocked) return;
-    
-    var modal = document.getElementById('decisionModal');
-    var overlay = document.getElementById('overlay');
-    
-    document.getElementById('decisionTitle').textContent = '🏔️ Выбор территории для прайда';
-    document.getElementById('decisionText').textContent = 'Где основать новый прайд?';
-    
-    var buttonsDiv = document.getElementById('decisionButtons');
-    buttonsDiv.innerHTML = '';
-    
-    var timeLeft = 15;
-    var timerInterval;
-    
-    for (var i = 0; i < Math.min(territories.length, 6); i++) {
-      var t = territories[i];
-      var btn = document.createElement('button');
-      btn.className = 'decision-btn accept';
-      btn.textContent = '🏠 ' + t.name;
-      btn.onclick = (function(terr) {
-        return function() {
-          clearInterval(timerInterval);
-          if (pendingDecisionTimeout) clearTimeout(pendingDecisionTimeout);
-          modal.style.display = 'none';
-          overlay.style.display = 'none';
-          decisionBlocked = false;
-          
-          lion.pride = terr.name;
-          lion.isRogue = false;
-          lion.status = 'Вожак (основатель)';
-          lion.foundingPride = currentDay;
-          lion.x = terr.x;
-          lion.y = terr.y;
-          addEvent("pride-found", "👑 " + lion.name + " основал новый прайд на территории " + terr.name + "!");
-          addEvent("promotion", "🏔️ Прайд " + terr.name + " основан!");
-          
-          updateSidePanel();
-          updateAllLionsList();
-        };
-      })(t);
-      buttonsDiv.appendChild(btn);
-    }
-    
-    var cancelBtn = document.createElement('button');
-    cancelBtn.className = 'decision-btn';
-    cancelBtn.textContent = '❌ ОТМЕНА';
-    cancelBtn.onclick = function() {
-      clearInterval(timerInterval);
-      if (pendingDecisionTimeout) clearTimeout(pendingDecisionTimeout);
-      modal.style.display = 'none';
-      overlay.style.display = 'none';
-      decisionBlocked = false;
-    };
-    buttonsDiv.appendChild(cancelBtn);
-    
-    modal.style.display = 'block';
-    overlay.style.display = 'block';
-    
-    var timerDisplay = document.getElementById('decisionTimer');
-    timerDisplay.textContent = '⏳ Время на выбор: ' + timeLeft + ' сек';
-    
-    timerInterval = setInterval(function() {
-      timeLeft--;
-      timerDisplay.textContent = '⏳ Время на выбор: ' + timeLeft + ' сек';
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        modal.style.display = 'none';
-        overlay.style.display = 'none';
-        decisionBlocked = false;
-        addEvent("info", "⏰ " + lion.name + " передумал основывать прайд.");
-      }
-    }, 1000);
-    
-    pendingDecisionTimeout = setTimeout(function() {
-      clearInterval(timerInterval);
-    }, 15000);
-  }
-  
-  function attackPride(attacker) {
-    if (attacker.pride !== 'Одиночка' && attacker.pride !== 'Безгривый') {
-      addEvent("info", "❌ " + attacker.name + " не является одиночкой!");
-      return;
-    }
-    
-    var targetPride = null;
-    var minDist = 500;
-    for (var i = 0; i < locations.length; i++) {
-      if (locations[i].type === 'pride_spot') {
-        var dist = distance(attacker, locations[i]);
-        if (dist < minDist) {
-          minDist = dist;
-          targetPride = locations[i];
+  // Поиск прайда для одинокой львицы
+  function searchPride(lion) {
+    if (!lion.isMale && lion.pride === 'Одиночка') {
+      var nearestPride = null;
+      var minDist = Infinity;
+      for (var i = 0; i < locations.length; i++) {
+        if (locations[i].type === 'pride_spot') {
+          var dist = distance(lion, locations[i]);
+          if (dist < minDist) {
+            minDist = dist;
+            nearestPride = locations[i];
+          }
         }
       }
-    }
-    
-    if (targetPride && minDist < 400) {
-      var prideMembers = [];
-      for (var m = 0; m < lions.length; m++) {
-        if (lions[m].alive && lions[m].pride === targetPride.name && !lions[m].isRogue) {
-          prideMembers.push(lions[m]);
+      if (nearestPride && minDist < 400) {
+        var prideMembers = getPrideMembers(nearestPride.name);
+        var leader = null;
+        for (var m = 0; m < prideMembers.length; m++) {
+          if (prideMembers[m].status === 'Вожак') {
+            leader = prideMembers[m];
+            break;
+          }
         }
+        if (leader) {
+          showDecisionModal(
+            '🏠 Поиск прайда',
+            lion.name + ' просится в прайд ' + nearestPride.name + '. Принять?',
+            [
+              { text: '✅ ПРИНЯТЬ', style: 'accept', callback: function() {
+                  lion.pride = nearestPride.name;
+                  lion.isRogue = false;
+                  lion.status = 'Новичок';
+                  lion.daysInPride = 0;
+                  lion.targetX = nearestPride.x;
+                  lion.targetY = nearestPride.y;
+                  addEvent("promotion", "🤝 " + lion.name + " принята в прайд " + nearestPride.name + "!");
+                  updateSidePanel();
+                  updateAllLionsList();
+                }
+              },
+              { text: '❌ ОТКАЗАТЬ', style: 'kill', callback: function() {
+                  addEvent("exile", "🚪 " + lion.name + " отказано в приёме в прайд " + nearestPride.name + "!");
+                }
+              }
+            ],
+            10
+          );
+        } else {
+          addEvent("info", "🏔️ " + lion.name + " не нашла подходящий прайд для вступления.");
+        }
+      } else {
+        addEvent("info", "🏔️ " + lion.name + " не нашла прайд поблизости.");
       }
-      
-      var leader = null;
-      for (var le = 0; le < prideMembers.length; le++) {
-        if (prideMembers[le].status === 'Вожак') {
-          leader = prideMembers[le];
+    }
+  }
+  
+  // Поиск партнёра для одинокой львицы
+  function searchPartner(lion) {
+    if (!lion.isMale && lion.pride === 'Одиночка') {
+      var partner = null;
+      for (var i = 0; i < lions.length; i++) {
+        if (lions[i].alive && lions[i].isMale && (lions[i].pride === 'Одиночка' || lions[i].pride === 'Безгривый') && lions[i].id !== lion.id && distance(lion, lions[i]) < 300) {
+          partner = lions[i];
           break;
         }
       }
+      if (partner) {
+        showDecisionModal(
+          '💕 Поиск партнёра',
+          lion.name + ' встретила ' + partner.name + '. Создать пару?',
+          [
+            { text: '💕 СОЗДАТЬ ПАРУ', style: 'accept', callback: function() {
+                lion.partnerId = partner.id;
+                partner.partnerId = lion.id;
+                lion.currentAction = "В паре с " + partner.name;
+                partner.currentAction = "В паре с " + lion.name;
+                addEvent("birth", "💕 " + lion.name + " и " + partner.name + " создали пару!");
+                // Повышаем шанс беременности
+                lion.traits.fertility += 30;
+              }
+            },
+            { text: '❌ ОТКАЗАТЬ', style: 'kill', callback: function() {
+                addEvent("info", "💔 " + lion.name + " отказала " + partner.name + ".");
+              }
+            }
+          ],
+          10
+        );
+      } else {
+        addEvent("info", "💔 " + lion.name + " не нашла партнёра поблизости.");
+      }
+    }
+  }
+
+  // Группировка безгривых у Логова Изгнанников
+  function uniteRoguesAtDen() {
+    var rogueDen = null;
+    for (var i = 0; i < locations.length; i++) {
+      if (locations[i].type === 'rogue_den') {
+        rogueDen = locations[i];
+        break;
+      }
+    }
+    if (!rogueDen) return;
+    
+    var rogues = [];
+    for (var i = 0; i < lions.length; i++) {
+      if (lions[i].alive && (lions[i].pride === 'Безгривый' || (lions[i].isRogue && lions[i].pride === 'Одиночка'))) {
+        rogues.push(lions[i]);
+      }
+    }
+    
+    // Тянут безгривых к логову
+    for (var r = 0; r < rogues.length; r++) {
+      var distToDen = distance(rogues[r], rogueDen);
+      if (distToDen > 150) {
+        rogues[r].targetX = rogueDen.x + (Math.random() - 0.5) * 100;
+        rogues[r].targetY = rogueDen.y + (Math.random() - 0.5) * 100;
+      }
+      rogues[r].currentAction = "В логове изгнанников";
+    }
+    
+    // Группировка
+    var groups = {};
+    for (var r2 = 0; r2 < rogues.length; r2++) {
+      var groupId = Math.floor(rogues[r2].x / 100) + "_" + Math.floor(rogues[r2].y / 100);
+      if (!groups[groupId]) groups[groupId] = [];
+      groups[groupId].push(rogues[r2]);
+    }
+    
+    for (var g in groups) {
+      if (groups[g].length >= 2) {
+        for (var rg = 0; rg < groups[g].length; rg++) {
+          groups[g][rg].rogueGroup = g;
+        }
+      }
+    }
+  }
+  
+  // Атака группы безгривых на прайд (когда "хотят попробовать")
+  function rogueGroupAttack() {
+    var rogueDen = null;
+    for (var i = 0; i < locations.length; i++) {
+      if (locations[i].type === 'rogue_den') {
+        rogueDen = locations[i];
+        break;
+      }
+    }
+    if (!rogueDen) return;
+    
+    var groups = {};
+    for (var i = 0; i < lions.length; i++) {
+      if (lions[i].alive && lions[i].rogueGroup && (lions[i].pride === 'Безгривый' || lions[i].isRogue)) {
+        if (!groups[lions[i].rogueGroup]) groups[lions[i].rogueGroup] = [];
+        groups[lions[i].rogueGroup].push(lions[i]);
+      }
+    }
+    
+    for (var groupName in groups) {
+      var group = groups[groupName];
+      if (group.length < 2) continue;
       
-      if (prideMembers.length > 0) {
-        var attackerStrength = attacker.traits.strength / 100 + Math.random() * 0.5;
-        var defenderStrength = prideMembers.length * 0.3 + (leader ? 0.4 : 0);
-        
-        addEvent("attack", "⚔️ " + attacker.name + " атакует прайд " + targetPride.name + "!");
-        
-        if (attackerStrength > defenderStrength) {
-          if (leader) {
-            killLion(leader, "Убит при захвате прайда");
+      // Найти ближайший прайд
+      var targetPride = null;
+      var minDist = Infinity;
+      for (var l = 0; l < locations.length; l++) {
+        if (locations[l].type === 'pride_spot') {
+          var groupCenterX = 0, groupCenterY = 0;
+          for (var g = 0; g < group.length; g++) {
+            groupCenterX += group[g].x;
+            groupCenterY += group[g].y;
           }
-          attacker.pride = targetPride.name;
-          attacker.isRogue = false;
-          attacker.status = 'Вожак (захватчик)';
-          addEvent("promotion", "👑 " + attacker.name + " захватил прайд " + targetPride.name + "!");
-        } else {
-          attacker.health = Math.max(0, attacker.health - 50);
-          if (attacker.health <= 0) {
-            killLion(attacker, "Убит защитниками прайда");
-          } else {
-            addEvent("defend", "🛡️ Прайд " + targetPride.name + " отбил атаку " + attacker.name + "!");
+          groupCenterX /= group.length;
+          groupCenterY /= group.length;
+          var dist = Math.sqrt((groupCenterX - locations[l].x) * (groupCenterX - locations[l].x) + (groupCenterY - locations[l].y) * (groupCenterY - locations[l].y));
+          if (dist < minDist && dist < 350) {
+            minDist = dist;
+            targetPride = locations[l];
           }
         }
-      } else {
-        addEvent("info", "🏔️ Прайд " + targetPride.name + " пустует, " + attacker.name + " занимает территорию!");
-        attacker.pride = targetPride.name;
-        attacker.isRogue = false;
-        attacker.status = 'Вожак';
       }
-      updateSidePanel();
-      updateAllLionsList();
-    } else {
-      addEvent("info", "📍 Рядом нет прайда для атаки!");
+      
+      if (targetPride && Math.random() < 0.08) {
+        var prideMembers = getPrideMembers(targetPride.name);
+        if (prideMembers.length > 0) {
+          addEvent("attack", "⚔️ Группа безгривых (" + group.length + " особей) вышла из логова и атакует прайд " + targetPride.name + "!");
+          
+          var leader = null;
+          for (var pm = 0; pm < prideMembers.length; pm++) {
+            if (prideMembers[pm].status === 'Вожак') {
+              leader = prideMembers[pm];
+              break;
+            }
+          }
+          
+          var attackerStrength = group.length * 0.6 + Math.random() * 0.5;
+          var defenderStrength = prideMembers.length * 0.4 + (leader ? 0.4 : 0);
+          
+          if (attackerStrength > defenderStrength) {
+            if (leader) {
+              killLion(leader, "Убит при атаке безгривых");
+            }
+            // Убивают львят
+            var cubsKilled = 0;
+            for (var c = 0; c < prideMembers.length; c++) {
+              if (prideMembers[c].isCub && Math.random() < 0.5) {
+                killLion(prideMembers[c], "Убит безгривыми");
+                cubsKilled++;
+              }
+            }
+            addEvent("attack", "👑 Безгривые захватили прайд " + targetPride.name + "! Убито " + cubsKilled + " львят");
+            
+            if (group.length > 0) {
+              group[0].pride = targetPride.name;
+              group[0].isRogue = false;
+              group[0].status = 'Вожак (захватчик)';
+              group[0].rogueGroup = null;
+              addEvent("promotion", "👑 " + group[0].name + " стал новым вожаком!");
+            }
+          } else {
+            for (var a = 0; a < group.length; a++) {
+              group[a].health = Math.max(0, group[a].health - 40);
+              if (group[a].health <= 0) {
+                killLion(group[a], "Убит защитниками прайда");
+              } else {
+                group[a].targetX = rogueDen.x + (Math.random() - 0.5) * 200;
+                group[a].targetY = rogueDen.y + (Math.random() - 0.5) * 200;
+              }
+            }
+            addEvent("defend", "🛡️ Прайд " + targetPride.name + " отбил атаку безгривых!");
+          }
+        }
+      }
     }
   }
 
@@ -733,15 +801,15 @@
                       if (intruderCopy.health <= 0) killLion(intruderCopy, "Убит по приказу вожака " + leaderCopy.name);
                       else {
                         var fleeAngle = Math.atan2(intruderCopy.y - leaderCopy.y, intruderCopy.x - leaderCopy.x);
-                        intruderCopy.targetX = Math.min(MAP_WIDTH - 50, Math.max(50, intruderCopy.x + Math.cos(fleeAngle) * 300));
-                        intruderCopy.targetY = Math.min(MAP_HEIGHT - 50, Math.max(50, intruderCopy.y + Math.sin(fleeAngle) * 300));
+                        intruderCopy.targetX = Math.min(MAP_WIDTH - 50, Math.max(50, intruderCopy.x + Math.cos(fleeAngle) * 350));
+                        intruderCopy.targetY = Math.min(MAP_HEIGHT - 50, Math.max(50, intruderCopy.y + Math.sin(fleeAngle) * 350));
                       }
                     } 
                   },
                   { text: '🚪 ПРОГНАТЬ', style: '', callback: function() {
                       var fleeAngle = Math.atan2(intruderCopy.y - leaderCopy.y, intruderCopy.x - leaderCopy.x);
-                      intruderCopy.targetX = Math.min(MAP_WIDTH - 50, Math.max(50, intruderCopy.x + Math.cos(fleeAngle) * 350));
-                      intruderCopy.targetY = Math.min(MAP_HEIGHT - 50, Math.max(50, intruderCopy.y + Math.sin(fleeAngle) * 350));
+                      intruderCopy.targetX = Math.min(MAP_WIDTH - 50, Math.max(50, intruderCopy.x + Math.cos(fleeAngle) * 400));
+                      intruderCopy.targetY = Math.min(MAP_HEIGHT - 50, Math.max(50, intruderCopy.y + Math.sin(fleeAngle) * 400));
                       addEvent("exile", "🚪 " + leaderCopy.name + " прогнал " + intruderCopy.name + " с территории!");
                     }
                   },
@@ -901,90 +969,172 @@
     }
   }
 
-  // Старение и уход вожаков
-  function simulateAging() {
-    for (var i = 0; i < lions.length; i++) {
-      var lion = lions[i];
-      if (!lion.alive || lion.isCub) continue;
-      
-      // Львицы не могут рожать после 8 лет
-      if (!lion.isMale && lion.age >= 8) {
-        lion.traits.fertility = 0;
-      }
-      
-      // Смертность от старости для львиц (12-15 лет)
-      if (!lion.isMale && lion.age >= 12 && lion.age <= 15 && Math.random() < 0.12) {
-        killLion(lion, "Умерла от старости, защищая прайд");
-        continue;
-      }
-      
-      // Смертность для вожаков (8-10 лет)
-      if (lion.isMale && lion.status === 'Вожак' && lion.age >= 8 && lion.age <= 10 && Math.random() < 0.15) {
-        killLion(lion, "Умер от старости");
-        continue;
-      }
-      
-      // В возрасте 9 лет вожак уходит из прайда и присоединяется к безгривым
-      if (lion.isMale && lion.status === 'Вожак' && lion.age === 9 && Math.random() < 0.4) {
-        var oldPride = lion.pride;
-        lion.pride = 'Безгривый';
-        lion.isRogue = true;
-        lion.status = 'Старый странник';
-        lion.helpingYoung = true;
-        addEvent("exile", "👴 " + lion.name + " покинул прайд " + oldPride + " в возрасте " + lion.age + " лет и присоединился к безгривым, чтобы помогать молодым!");
-        lion.memories.push("Ушёл из прайда помогать молодым львам");
+  function createOwnPride(lion) {
+    if (lion.pride !== 'Одиночка' && lion.pride !== 'Безгривый') {
+      addEvent("info", "❌ " + lion.name + " уже в прайде!");
+      return;
+    }
+    if (!lion.isMale) {
+      addEvent("info", "❌ Только самец может основать прайд!");
+      return;
+    }
+    
+    var territories = [];
+    for (var i = 0; i < locations.length; i++) {
+      if (locations[i].type === 'pride_spot') {
+        territories.push(locations[i]);
       }
     }
+    
+    showTerritoryChoice(lion, territories);
   }
   
-  // Старые вожаки помогают молодым безгривым
-  function elderHelpsYoung() {
-    for (var i = 0; i < lions.length; i++) {
-      var elder = lions[i];
-      if (!elder.alive || !elder.helpingYoung) continue;
-      
-      for (var j = 0; j < lions.length; j++) {
-        var young = lions[j];
-        if (young.alive && young.isRogue && young.age < 5 && young.isMale && distance(elder, young) < 150) {
-          if (Math.random() < 0.2) {
-            young.hunger = Math.min(100, young.hunger + 15);
-            young.memories.push(elder.name + " поделился мясом");
-            addEvent("info", "🍖 Старый вожак " + elder.name + " поделился мясом с молодым " + young.name + "!");
-          }
-          if (Math.random() < 0.1 && young.huntCooldown === 0) {
-            young.huntCooldown = 0;
-            young.currentAction = "Охотится с помощью старшего";
-            addEvent("info", "🏹 Старый вожак " + elder.name + " помогает молодому " + young.name + " в охоте!");
-          }
+  function showTerritoryChoice(lion, territories) {
+    if (decisionBlocked) return;
+    decisionBlocked = true;
+    
+    var modal = document.getElementById('decisionModal');
+    var overlay = document.getElementById('overlay');
+    
+    document.getElementById('decisionTitle').textContent = '🏔️ Выбор территории для прайда';
+    document.getElementById('decisionText').textContent = 'Где основать новый прайд?';
+    
+    var buttonsDiv = document.getElementById('decisionButtons');
+    buttonsDiv.innerHTML = '';
+    
+    var timeLeft = 15;
+    var timerInterval;
+    
+    for (var i = 0; i < Math.min(territories.length, 8); i++) {
+      var t = territories[i];
+      var btn = document.createElement('button');
+      btn.className = 'decision-btn accept';
+      btn.textContent = '🏠 ' + t.name;
+      btn.onclick = (function(terr) {
+        return function() {
+          clearInterval(timerInterval);
+          if (pendingDecisionTimeout) clearTimeout(pendingDecisionTimeout);
+          modal.style.display = 'none';
+          overlay.style.display = 'none';
+          decisionBlocked = false;
+          
+          lion.pride = terr.name;
+          lion.isRogue = false;
+          lion.status = 'Вожак (основатель)';
+          lion.foundingPride = currentDay;
+          lion.x = terr.x;
+          lion.y = terr.y;
+          addEvent("pride-found", "👑 " + lion.name + " основал новый прайд на территории " + terr.name + "!");
+          addEvent("promotion", "🏔️ Прайд " + terr.name + " основан!");
+          
+          updateSidePanel();
+          updateAllLionsList();
+        };
+      })(t);
+      buttonsDiv.appendChild(btn);
+    }
+    
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'decision-btn';
+    cancelBtn.textContent = '❌ ОТМЕНА';
+    cancelBtn.onclick = function() {
+      clearInterval(timerInterval);
+      if (pendingDecisionTimeout) clearTimeout(pendingDecisionTimeout);
+      modal.style.display = 'none';
+      overlay.style.display = 'none';
+      decisionBlocked = false;
+    };
+    buttonsDiv.appendChild(cancelBtn);
+    
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
+    
+    var timerDisplay = document.getElementById('decisionTimer');
+    timerDisplay.textContent = '⏳ Время на выбор: ' + timeLeft + ' сек';
+    
+    timerInterval = setInterval(function() {
+      timeLeft--;
+      timerDisplay.textContent = '⏳ Время на выбор: ' + timeLeft + ' сек';
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+        decisionBlocked = false;
+        addEvent("info", "⏰ " + lion.name + " передумал основывать прайд.");
+      }
+    }, 1000);
+    
+    pendingDecisionTimeout = setTimeout(function() {
+      clearInterval(timerInterval);
+    }, 15000);
+  }
+  
+  function attackPride(attacker) {
+    if (attacker.pride !== 'Одиночка' && attacker.pride !== 'Безгривый') {
+      addEvent("info", "❌ " + attacker.name + " не является одиночкой!");
+      return;
+    }
+    
+    var targetPride = null;
+    var minDist = 500;
+    for (var i = 0; i < locations.length; i++) {
+      if (locations[i].type === 'pride_spot') {
+        var dist = distance(attacker, locations[i]);
+        if (dist < minDist) {
+          minDist = dist;
+          targetPride = locations[i];
         }
       }
     }
-  }
-
-  // Болезни львят
-  function simulateDisease() {
-    for (var i = 0; i < lions.length; i++) {
-      var lion = lions[i];
-      if (!lion.alive || !lion.isCub) continue;
-      
-      // Шанс заболеть
-      if (Math.random() < 0.02 && lion.disease === 0) {
-        lion.disease = 5 + Math.floor(Math.random() * 8);
-        addEvent("disease", "🦠 Львёнок " + lion.name + " заболел! Болезнь продлится " + lion.disease + " дней.");
-        lion.memories.push("Переболел болезнью");
-      }
-      
-      if (lion.disease > 0) {
-        lion.disease--;
-        lion.health = Math.max(0, lion.health - 3);
-        if (lion.health <= 0) {
-          killLion(lion, "Умер от болезни");
-          continue;
-        }
-        if (lion.disease === 0) {
-          addEvent("info", "💪 Львёнок " + lion.name + " выздоровел!");
+    
+    if (targetPride && minDist < 400) {
+      var prideMembers = [];
+      for (var m = 0; m < lions.length; m++) {
+        if (lions[m].alive && lions[m].pride === targetPride.name && !lions[m].isRogue) {
+          prideMembers.push(lions[m]);
         }
       }
+      
+      var leader = null;
+      for (var le = 0; le < prideMembers.length; le++) {
+        if (prideMembers[le].status === 'Вожак') {
+          leader = prideMembers[le];
+          break;
+        }
+      }
+      
+      if (prideMembers.length > 0) {
+        var attackerStrength = attacker.traits.strength / 100 + Math.random() * 0.5;
+        var defenderStrength = prideMembers.length * 0.3 + (leader ? 0.4 : 0);
+        
+        addEvent("attack", "⚔️ " + attacker.name + " атакует прайд " + targetPride.name + "!");
+        
+        if (attackerStrength > defenderStrength) {
+          if (leader) {
+            killLion(leader, "Убит при захвате прайда");
+          }
+          attacker.pride = targetPride.name;
+          attacker.isRogue = false;
+          attacker.status = 'Вожак (захватчик)';
+          addEvent("promotion", "👑 " + attacker.name + " захватил прайд " + targetPride.name + "!");
+        } else {
+          attacker.health = Math.max(0, attacker.health - 50);
+          if (attacker.health <= 0) {
+            killLion(attacker, "Убит защитниками прайда");
+          } else {
+            addEvent("defend", "🛡️ Прайд " + targetPride.name + " отбил атаку " + attacker.name + "!");
+          }
+        }
+      } else {
+        addEvent("info", "🏔️ Прайд " + targetPride.name + " пустует, " + attacker.name + " занимает территорию!");
+        attacker.pride = targetPride.name;
+        attacker.isRogue = false;
+        attacker.status = 'Вожак';
+      }
+      updateSidePanel();
+      updateAllLionsList();
+    } else {
+      addEvent("info", "📍 Рядом нет прайда для атаки!");
     }
   }
 
@@ -1087,7 +1237,6 @@
             lion.targetY = ppl.y;
           }
         } else {
-          // Одиночка ест мясо на месте
           for (var mi = 0; mi < meatPieces.length; mi++) {
             if (meatPieces[mi].carrier === lion.id) {
               lion.hunger = Math.min(100, lion.hunger + meatPieces[mi].nutrition);
@@ -1200,7 +1349,6 @@
           var pl = getPrideLocation(lion.pride);
           if (pl) { lion.targetX = pl.x; lion.targetY = pl.y; }
         } else {
-          // Одиночка ест на месте
           lion.hunger = Math.min(100, lion.hunger + closest.nutrition);
           lion.carrying = null;
           for (var mi = 0; mi < meatPieces.length; mi++) {
@@ -1255,7 +1403,7 @@
         if (!cub.alive || !cub.isCub) continue;
         
         var dist = distance(rogue, cub);
-        if (dist < 120 && Math.random() < 0.35) {
+        if (dist < 120 && Math.random() < 0.3) {
           var damage = 30 + Math.floor(Math.random() * 50);
           cub.health = Math.max(0, cub.health - damage);
           addEvent("attack", "💀 " + rogue.name + " напал(а) на львёнка " + cub.name + "! Урон " + damage);
@@ -1292,8 +1440,23 @@
     for (var i = 0; i < lions.length; i++) {
       var lion = lions[i];
       if (!lion.alive || lion.isMale || lion.isCub) continue;
-      if (lion.pride === 'Одиночка' || lion.pride === 'Безгривый') continue;
-      if (lion.age < 3 || lion.age > 8) continue; // Львицы не рожают после 8 лет
+      if (lion.pride === 'Одиночка' || lion.pride === 'Безгривый') {
+        if (lion.partnerId) {
+          var partner = null;
+          for (var p = 0; p < lions.length; p++) {
+            if (lions[p].id === lion.partnerId && lions[p].alive) {
+              partner = lions[p];
+              break;
+            }
+          }
+          if (partner && distance(lion, partner) < 100 && !lion.pregnant && Math.random() < 0.08) {
+            lion.pregnant = 8;
+            addEvent("birth", "🤰 " + lion.name + " забеременела от " + partner.name + "!");
+          }
+        }
+        continue;
+      }
+      if (lion.age < 3 || lion.age > 8) continue;
       
       if (!lion.pregnant && !lion.hasCub && Math.random() < 0.05) {
         lion.pregnant = 8;
@@ -1403,6 +1566,80 @@
     }
   }
 
+  function simulateAging() {
+    for (var i = 0; i < lions.length; i++) {
+      var lion = lions[i];
+      if (!lion.alive || lion.isCub) continue;
+      
+      if (!lion.isMale && lion.age >= 8) {
+        lion.traits.fertility = 0;
+      }
+      
+      if (!lion.isMale && lion.age >= 12 && lion.age <= 15 && Math.random() < 0.12) {
+        killLion(lion, "Умерла от старости, защищая прайд");
+        continue;
+      }
+      
+      if (lion.isMale && lion.status === 'Вожак' && lion.age >= 8 && lion.age <= 10 && Math.random() < 0.15) {
+        killLion(lion, "Умер от старости");
+        continue;
+      }
+      
+      if (lion.isMale && lion.status === 'Вожак' && lion.age === 9 && Math.random() < 0.4) {
+        var oldPride = lion.pride;
+        lion.pride = 'Безгривый';
+        lion.isRogue = true;
+        lion.status = 'Старый странник';
+        lion.helpingYoung = true;
+        addEvent("exile", "👴 " + lion.name + " покинул прайд " + oldPride + " в возрасте " + lion.age + " лет и присоединился к безгривым!");
+        lion.memories.push("Ушёл из прайда помогать молодым львам");
+      }
+    }
+  }
+  
+  function elderHelpsYoung() {
+    for (var i = 0; i < lions.length; i++) {
+      var elder = lions[i];
+      if (!elder.alive || !elder.helpingYoung) continue;
+      
+      for (var j = 0; j < lions.length; j++) {
+        var young = lions[j];
+        if (young.alive && young.isRogue && young.age < 5 && young.isMale && distance(elder, young) < 200) {
+          if (Math.random() < 0.2) {
+            young.hunger = Math.min(100, young.hunger + 15);
+            young.memories.push(elder.name + " поделился мясом");
+            addEvent("info", "🍖 Старый вожак " + elder.name + " поделился мясом с молодым " + young.name + "!");
+          }
+        }
+      }
+    }
+  }
+
+  function simulateDisease() {
+    for (var i = 0; i < lions.length; i++) {
+      var lion = lions[i];
+      if (!lion.alive || !lion.isCub) continue;
+      
+      if (Math.random() < 0.02 && lion.disease === 0) {
+        lion.disease = 5 + Math.floor(Math.random() * 8);
+        addEvent("disease", "🦠 Львёнок " + lion.name + " заболел! Болезнь продлится " + lion.disease + " дней.");
+        lion.memories.push("Переболел болезнью");
+      }
+      
+      if (lion.disease > 0) {
+        lion.disease--;
+        lion.health = Math.max(0, lion.health - 3);
+        if (lion.health <= 0) {
+          killLion(lion, "Умер от болезни");
+          continue;
+        }
+        if (lion.disease === 0) {
+          addEvent("info", "💪 Львёнок " + lion.name + " выздоровел!");
+        }
+      }
+    }
+  }
+
   function simulateDay() {
     for (var i = 0; i < lions.length; i++) {
       if (lions[i].huntCooldown > 0) lions[i].huntCooldown--;
@@ -1422,6 +1659,8 @@
     simulateAging();
     elderHelpsYoung();
     simulateDisease();
+    uniteRoguesAtDen();
+    rogueGroupAttack();
     
     for (var j = lions.length - 1; j >= 0; j--) {
       var lion = lions[j];
@@ -1601,15 +1840,28 @@
       h += '</div>';
     }
     
-    var roguesCount = 0;
+    var rogueGroups = {};
     for (var i = 0; i < lions.length; i++) {
-      if (lions[i].alive && (lions[i].pride === 'Одиночка' || lions[i].pride === 'Безгривый')) {
-        roguesCount++;
+      if (lions[i].alive && (lions[i].pride === 'Безгривый' || lions[i].isRogue)) {
+        var group = lions[i].rogueGroup || "одиночка";
+        if (!rogueGroups[group]) rogueGroups[group] = [];
+        rogueGroups[group].push(lions[i]);
       }
     }
-    if (roguesCount > 0) {
-      h += '<div class="pride-mini" style="border-color:#ff6600;"><strong>👹 СТРАННИКИ И ОДИНОЧКИ</strong><br>';
-      h += '<span style="font-size:9px;">' + roguesCount + ' особей скитается по саванне</span><br>';
+    if (Object.keys(rogueGroups).length > 0) {
+      h += '<div class="pride-mini" style="border-color:#ff6600;"><strong>👹 БЕЗГРИВЫЕ (ЛОГОВО ИЗГНАННИКОВ)</strong><br>';
+      for (var gr in rogueGroups) {
+        if (rogueGroups[gr].length >= 2) {
+          h += '<span style="font-size:9px; color:#ffaa66;">Группа (' + rogueGroups[gr].length + '):</span> ';
+        } else {
+          h += '<span style="font-size:9px; color:#ffaa66;">Одиночка:</span> ';
+        }
+        for (var r = 0; r < Math.min(rogueGroups[gr].length, 3); r++) {
+          h += '<span class="member-line" onclick="showLionById(\'' + rogueGroups[gr][r].id + '\')">' + rogueGroups[gr][r].name + ' ' + rogueGroups[gr][r].age + 'л</span> ';
+        }
+        if (rogueGroups[gr].length > 3) h += 'и ещё ' + (rogueGroups[gr].length - 3);
+        h += '<br>';
+      }
       h += '</div>';
     }
     
@@ -1631,7 +1883,8 @@
       h += '<strong style="color:' + color + ';">' + statusIcon + ' ' + diseaseIcon + ' ' + lion.name + '</strong> ';
       h += '(' + (lion.isMale ? '♂' : '♀') + ', ' + ageDisplay + ')';
       h += ' — ' + lion.pride + ' | ' + lion.status;
-      if (lion.helpingYoung) h += ' (помогает молодым)';
+      if (lion.helpingYoung) h += ' (помогает)';
+      if (lion.partnerId) h += ' (в паре)';
       h += '<br><span style="font-size:9px;">🎨 ' + lion.coatColor.name + ' | 👁️ ' + lion.eyeColor + ' | 🔖 ' + lion.marking + '</span>';
       h += '<br><span style="font-size:9px;">🍖' + Math.round(lion.hunger) + '% 💧' + Math.round(lion.thirst) + '% ❤️' + Math.round(lion.health) + '%';
       if (!lion.alive) h += ' | 💀 ' + (lion.deathReason || 'неизвестно');
@@ -1765,13 +2018,34 @@
       actionsDiv.appendChild(attackBtn);
     }
     
+    if (!lion.isMale && lion.pride === 'Одиночка' && lion.alive) {
+      var searchPrideBtn = document.createElement('button');
+      searchPrideBtn.className = 'action-btn info';
+      searchPrideBtn.textContent = '🏠 ПОИСК ПРАЙДА';
+      searchPrideBtn.onclick = (function(l) { return function() { 
+        searchPride(l); 
+        document.getElementById('character-popup').style.display = 'none'; 
+        document.getElementById('overlay').style.display = 'none'; 
+      }; })(lion);
+      actionsDiv.appendChild(searchPrideBtn);
+      
+      var searchPartnerBtn = document.createElement('button');
+      searchPartnerBtn.className = 'action-btn info';
+      searchPartnerBtn.textContent = '💕 ПОИСК ПАРТНЁРА';
+      searchPartnerBtn.onclick = (function(l) { return function() { 
+        searchPartner(l); 
+        document.getElementById('character-popup').style.display = 'none'; 
+        document.getElementById('overlay').style.display = 'none'; 
+      }; })(lion);
+      actionsDiv.appendChild(searchPartnerBtn);
+    }
+    
     document.getElementById('character-popup').style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
   }
 
   function drawMap() {
     ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    // Рисуем траву
     for (var y = 0; y < MAP_HEIGHT; y += 20) {
       ctx.fillStyle = '#c2a65c';
       ctx.fillRect(0, y, MAP_WIDTH, 10);
@@ -1793,7 +2067,6 @@
         ctx.beginPath();
         ctx.arc(loc.x, loc.y, loc.radius, 0, Math.PI * 2);
         ctx.stroke();
-        // Рисуем флаг прайда
         ctx.fillStyle = '#ffd700';
         ctx.fillRect(loc.x + 10, loc.y - 25, 3, 20);
         ctx.fillStyle = '#c49a2c';
@@ -1802,6 +2075,20 @@
         ctx.lineTo(loc.x + 30, loc.y - 18);
         ctx.lineTo(loc.x + 13, loc.y - 11);
         ctx.fill();
+      } else if (loc.type === 'rogue_den') {
+        ctx.fillStyle = 'rgba(80,60,40,0.3)';
+        ctx.beginPath();
+        ctx.arc(loc.x, loc.y, loc.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(loc.x - 12, loc.y - 8, 24, 16);
+        ctx.fillStyle = '#a0522d';
+        ctx.fillRect(loc.x - 8, loc.y - 12, 16, 8);
+        ctx.fillStyle = '#ff6600';
+        ctx.font = 'bold 14px "Courier New"';
+        ctx.textAlign = 'center';
+        ctx.fillText('👹', loc.x, loc.y - 15);
+        ctx.textAlign = 'start';
       } else if (loc.type === 'forest') {
         ctx.fillStyle = 'rgba(30,60,20,0.3)';
         ctx.beginPath();
@@ -1921,6 +2208,11 @@
           ctx.font = '12px "Courier New"';
           ctx.fillText('🏹', lx + 11, ly - 8);
         }
+        if (lion.partnerId) {
+          ctx.fillStyle = '#ff69b4';
+          ctx.font = '10px "Courier New"';
+          ctx.fillText('💕', lx - 14, ly - 28);
+        }
         
         ctx.fillStyle = lion.health < 30 ? '#f00' : lion.health < 60 ? '#fa0' : '#0f0';
         ctx.fillRect(lx - 6, ly + 10, 12, 3);
@@ -1946,9 +2238,9 @@
   var secondsUntilNextDay = 60;
   var eventLog = [];
   var MAX_LOG = 80;
-  var zoomLevel = 1, panX = 0, panY = 0, isPanning = false;
+  var zoomLevel = 0.8, panX = 0, panY = 0, isPanning = false;
   var panStartX = 0, panStartY = 0, panStartPanX = 0, panStartPanY = 0;
-  var MIN_ZOOM = 0.2, MAX_ZOOM = 2.5;
+  var MIN_ZOOM = 0.2, MAX_ZOOM = 2.0;
   var canvas = document.getElementById('gameCanvas');
   var ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -1985,8 +2277,8 @@
     document.getElementById('overlay').style.display = 'none';
   };
   
-  document.getElementById('zoomInBtn').onclick = function() { zoomLevel = Math.min(MAX_ZOOM, zoomLevel + 0.15); applyZoom(); };
-  document.getElementById('zoomOutBtn').onclick = function() { zoomLevel = Math.max(MIN_ZOOM, zoomLevel - 0.15); applyZoom(); };
+  document.getElementById('zoomInBtn').onclick = function() { zoomLevel = Math.min(MAX_ZOOM, zoomLevel + 0.1); applyZoom(); };
+  document.getElementById('zoomOutBtn').onclick = function() { zoomLevel = Math.max(MIN_ZOOM, zoomLevel - 0.1); applyZoom(); };
   document.getElementById('zoomResetBtn').onclick = function() { zoomLevel = 0.8; panX = 0; panY = 0; applyZoom(); };
   
   container.addEventListener('wheel', function(e) {
@@ -1994,7 +2286,7 @@
     var rect = container.getBoundingClientRect();
     var mx = e.clientX - rect.left, my = e.clientY - rect.top;
     var oz = zoomLevel;
-    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomLevel + (e.deltaY > 0 ? -0.1 : 0.1)));
+    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomLevel + (e.deltaY > 0 ? -0.08 : 0.08)));
     var zr = zoomLevel / oz;
     panX = mx - zr * (mx - panX);
     panY = my - zr * (my - panY);
@@ -2042,7 +2334,7 @@
     currentDay = 1;
     secondsUntilNextDay = 60;
     meatPieces = [];
-    eventLog = [{ type: 'info', text: '🌅 Новый цикл. Карта увеличена вдвое!' }];
+    eventLog = [{ type: 'info', text: '🌅 Новый цикл. Безгривые собираются у Логова Изгнанников!' }];
     spawnPrey();
     initLions();
     preloadImages();
@@ -2119,7 +2411,7 @@
   updateSidePanel();
   updateTimerDisplay();
   animationLoop();
-  console.log("✅ ГОТОВО! Карта увеличена, одиночки едят мясо на месте, можно создавать прайды, добавил старость и болезни.");
+  console.log("✅ ГОТОВО! Безгривые в логове, одиночки ищут прайд/партнёра, группы атакуют прайды!");
 })();
 </script>
 
