@@ -5,13 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Прайдленд — Симуляция жизни львов</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #2d2a1e;
+      background: #1a1408;
       font-family: 'Courier New', Courier, monospace;
       display: flex;
       justify-content: center;
@@ -20,30 +16,65 @@
       flex-direction: column;
       padding: 10px;
       image-rendering: pixelated;
+      overflow-x: hidden;
     }
-    #game-container {
+    #game-wrapper {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #5c8c46;
-      border: 12px solid #4a3926;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-      padding: 10px;
+      width: 100%;
       max-width: 100%;
     }
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      overflow: hidden;
+      border: 8px solid #4a3926;
+      border-radius: 16px;
+      background: #1a1408;
+      cursor: grab;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    }
+    #canvas-container:active { cursor: grabbing; }
     canvas {
       display: block;
       image-rendering: crisp-edges;
       image-rendering: pixelated;
-      width: 100%;
-      max-width: 1200px;
-      height: auto;
-      border: 6px solid #3b2d1a;
-      border-radius: 8px;
       background: #b7a87a;
-      cursor: crosshair;
+      transform-origin: 0 0;
+      transition: transform 0.05s ease-out;
     }
+    .zoom-controls {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 20;
+    }
+    .zoom-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #4a3926;
+      color: #ffd966;
+      border: 2px solid #8b7355;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      transition: 0.15s;
+      user-select: none;
+    }
+    .zoom-btn:hover { background: #6b4e1b; }
+    .zoom-btn:active { transform: scale(0.9); }
+    .zoom-reset { font-size: 14px; }
     .panel {
       width: 100%;
       max-width: 1200px;
@@ -54,81 +85,113 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      border-radius: 0 0 12px 12px;
-      font-size: 16px;
+      border-radius: 12px 12px 0 0;
+      font-size: 15px;
       font-weight: bold;
       text-shadow: 2px 2px 0 #1f1a0e;
-      margin-bottom: 5px;
+      gap: 10px;
     }
     .panel button {
       background: #c49a2c;
       border: none;
       color: #2d2412;
       font-weight: bold;
-      padding: 8px 18px;
-      margin: 5px;
+      padding: 8px 16px;
+      margin: 2px;
       border-radius: 20px;
       cursor: pointer;
       font-family: inherit;
-      font-size: 14px;
+      font-size: 13px;
       box-shadow: 0 4px 0 #6b4e1b;
-      transition: 0.1s linear;
+      transition: 0.1s;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-    .panel button:active {
-      transform: translateY(3px);
-      box-shadow: 0 1px 0 #6b4e1b;
+    .panel button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e1b; }
+    .panel button.auto-active {
+      background: #e6b422;
+      box-shadow: 0 4px 0 #8b6914;
+      animation: glow 1.5s infinite;
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 4px 0 #8b6914, 0 0 15px #ffd700; }
+      50% { box-shadow: 0 4px 0 #8b6914, 0 0 30px #ffaa00; }
     }
     .info-box {
       background: #2d2412;
-      padding: 6px 15px;
+      padding: 6px 14px;
       border-radius: 30px;
       color: #ffd966;
+      font-size: 14px;
     }
+    .timer-box {
+      background: #1a0e00;
+      padding: 6px 14px;
+      border-radius: 30px;
+      color: #ff8c00;
+      font-size: 13px;
+    }
+    .dialog-log {
+      width: 100%;
+      max-width: 1200px;
+      background: #0d0a04;
+      color: #d4c49a;
+      padding: 12px 16px;
+      margin-top: 6px;
+      border-radius: 0 0 12px 12px;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 2px solid #3d2c1c;
+      font-family: 'Courier New', monospace;
+      line-height: 1.6;
+    }
+    .dialog-log .entry { padding: 2px 0; border-bottom: 1px dotted #2a1f0f; }
+    .dialog-log .lion-name { color: #ffd966; font-weight: bold; }
+    .dialog-log .speech { color: #ffb347; font-style: italic; }
+    .dialog-log .danger { color: #ff4444; font-weight: bold; }
+    .dialog-log .drama { color: #ff69b4; font-weight: bold; }
+    .dialog-log .betrayal { color: #ff0000; font-weight: bold; text-shadow: 0 0 8px red; }
+    .dialog-log .exile { color: #ff8800; font-weight: bold; }
+    .dialog-log .promotion { color: #ffd700; font-weight: bold; text-shadow: 0 0 10px gold; }
+    .dialog-log .cub_born { color: #ff69b4; font-weight: bold; }
+
     #character-popup {
       position: fixed;
-      top: 20%;
-      left: 50%;
-      transform: translate(-50%, -20%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
       background: #fdf4d4;
       border: 8px solid #755c34;
-      border-radius: 30px;
-      padding: 20px;
+      border-radius: 24px;
+      padding: 22px;
       color: #2d1f0c;
-      width: 380px;
-      max-width: 90vw;
-      box-shadow: 0 25px 50px black;
+      width: 420px;
+      max-width: 92vw;
+      box-shadow: 0 30px 60px black;
       display: none;
-      z-index: 100;
+      z-index: 200;
       font-family: 'Courier New', monospace;
-      image-rendering: pixelated;
-      max-height: 80vh;
+      max-height: 85vh;
       overflow-y: auto;
     }
     #character-popup h3 {
-      font-size: 24px;
-      margin-bottom: 10px;
+      font-size: 22px;
+      margin-bottom: 8px;
       border-bottom: 3px dashed #a6844b;
+      padding-bottom: 6px;
     }
     .stat-bar {
       background: #4d3a22;
-      height: 12px;
+      height: 10px;
       width: 100%;
-      border-radius: 10px;
-      margin: 5px 0 12px;
+      border-radius: 8px;
+      margin: 4px 0 10px;
       overflow: hidden;
       border: 1px solid #2d1a0c;
     }
-    .stat-fill {
-      height: 100%;
-      width: 80%;
-      background: #e6b422;
-      transition: width 0.3s;
-    }
+    .stat-fill { height: 100%; transition: width 0.5s; }
     .lion-portrait {
-      width: 80px;
-      height: 80px;
+      width: 70px; height: 70px;
       image-rendering: pixelated;
       border: 3px solid #755c34;
       border-radius: 10px;
@@ -145,628 +208,1067 @@
       border-radius: 20px;
       cursor: pointer;
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 8px; right: 8px;
+      font-size: 16px;
+    }
+    .overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      z-index: 150;
     }
     .dead-list {
       max-width: 1200px;
-      background: #1f1a0e;
+      background: #0d0a04;
       color: #cca77a;
-      padding: 15px;
-      margin-top: 10px;
+      padding: 14px;
+      margin-top: 8px;
       border-radius: 12px;
       width: 100%;
-      font-size: 14px;
+      font-size: 13px;
       border: 2px solid #4a3926;
     }
-    .dead-list strong {
-      display: block;
-      margin-bottom: 8px;
-      color: #e6b422;
-    }
+    .dead-list strong { display: block; margin-bottom: 6px; color: #e6b422; }
     .dead-entry {
-      background: #3d2c1c;
-      padding: 6px 14px;
-      border-radius: 20px;
+      background: #2a1a0c;
+      padding: 5px 12px;
+      border-radius: 16px;
       display: inline-block;
       margin: 3px;
-      border: 1px solid #6b4e1b;
+      border: 1px solid #5c3a1e;
+      font-size: 12px;
     }
-    .admin-note {
-      background: #fff3cd;
-      color: #856404;
-      padding: 10px;
+    .insert-guide {
+      background: #1a3a1a;
+      color: #aaffaa;
+      padding: 12px 18px;
+      border-radius: 12px;
       margin: 10px 0;
-      border-radius: 8px;
       font-size: 13px;
-      border: 2px dashed #ffc107;
+      border: 2px dashed #44ff44;
       max-width: 1200px;
       width: 100%;
+      font-family: 'Courier New', monospace;
+      line-height: 1.5;
+    }
+    .insert-guide code {
+      background: #0a1a0a;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #ffff88;
     }
     @media (max-width: 700px) {
-      .panel {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+      .panel { flex-direction: column; align-items: flex-start; }
+      #character-popup { width: 95vw; padding: 14px; }
     }
   </style>
 </head>
 <body>
 
 <!-- ==================== -->
-<!-- !!! АДМИН-ИНСТРУКЦИЯ -->
+<!-- !!! ГАЙД ПО ВСТАВКЕ ЛЬВОВ !!! -->
 <!-- ==================== -->
-<div class="admin-note" style="max-width:1200px; width:100%;">
-  <strong>🔧 ИНСТРУКЦИЯ ДЛЯ АДМИНИСТРАТОРА (ТЕБЯ):</strong><br>
-  ● <strong>ВСЕ НАСТРОЙКИ НИЖЕ В БЛОКЕ "КОНФИГУРАЦИЯ ЛЬВОВ"</strong> — меняй там данные.<br>
-  ● <strong>ИМЕНА ФАЙЛОВ ИЗОБРАЖЕНИЙ:</strong> клади картинки в папку <code>images/</code> рядом с index.html.<br>
-  ● <strong>ФОРМАТ:</strong> PNG (рекомендуется), фон — прозрачный или однотонный (лучше прозрачный).<br>
-  ● <strong>РАЗМЕР:</strong> 64x64 пикселей для спрайта на карте, 128x128 для портрета (можно одну и ту же).<br>
-  ● <strong>ЧТОБЫ ДОБАВИТЬ ЛЬВА:</strong> скопируй блок одного льва и вставь новые данные.<br>
-  ● <strong>ЧТОБЫ УДАЛИТЬ/УБИТЬ ЛЬВА:</strong> поставь <code>alive: false</code> и укажи <code>deathReason</code>.<br>
-  ● <strong>ДЕТЁНЫШ:</strong> поставь <code>hasCub: true</code> — появится значок в инфо.<br>
-  <strong>⚠️ ВСЕ ПОЛЯ ОБЯЗАТЕЛЬНЫ, ИНАЧЕ САЙТ СЛОМАЕТСЯ!</strong>
+<div class="insert-guide" style="max-width:1200px; width:100%;">
+  <strong>🔧 КУДА ВСТАВЛЯТЬ НОВЫХ ЛЬВОВ:</strong><br>
+  ● Найди строку <code>// !!! ВСТАВЛЯЙ НОВЫХ ЛЬВОВ СЮДА (ПЕРЕД ЗАКРЫВАЮЩЕЙ СКОБКОЙ ]) !!!</code><br>
+  ● <strong>ПРЯМО ПЕРЕД НЕЙ</strong> вставь новый блок льва<br>
+  ● <strong>НЕ ЗАБУДЬ ЗАПЯТУЮ</strong> после закрывающей фигурной скобки <code>},</code><br>
+  ● У последнего льва перед <code>]</code> запятой быть <strong>НЕ ДОЛЖНО</strong><br>
+  <br>
+  <strong>📋 ШАБЛОН НОВОГО ЛЬВА:</strong><br>
+  <code style="display:block;white-space:pre;background:#0a0a0a;padding:8px;border-radius:6px;margin:6px 0;">{
+    id: "lion_УНИКАЛЬНЫЙ_ID",
+    name: "Поверстрайк", author: "чмоня",
+    pride: "СКАЛА СОВЕТА", status: "Львёнок", mood: "Игривый",
+    currentAction: "Играет", isRogue: false,
+    hunger: 90, thirst: 90, health: 100,
+    isMale: true, age: 0,
+    hasCub: false, alive: true, deathReason: "",
+    memories: ["Родился в прайде"],
+    daysInPride: 0, huntsParticipated: 0, battlesWon: 0, cubsRaised: 0,
+    x: 240, y: 170, targetX: 240, targetY: 170,
+    portrait: "FFF.png", speed: 0.5,
+    personality: "scout"
+  },</code>
+  <strong>⚠️ НОВЫЕ ПОЛЯ ДЛЯ КАРЬЕРЫ:</strong> <code>daysInPride</code>, <code>huntsParticipated</code>, <code>battlesWon</code>, <code>cubsRaised</code> — ОБЯЗАТЕЛЬНЫ!
 </div>
 
-<div id="game-container">
+<div id="game-wrapper">
   <div class="panel">
     <span>🌍 ПРАЙДЛЕНД • День <span id="dayCounter">1</span></span>
-    <span class="info-box">🦁 Живых: <span id="popCount">5</span> | 💀 Мёртвых: <span id="deadCount">0</span></span>
+    <span class="timer-box" id="timerDisplay">⏳ След. день: 20:00</span>
+    <span class="info-box">🦁 Живых: <span id="popCount">6</span> | 💀 Мёртвых: <span id="deadCount">0</span> | 👹 Безгривых: <span id="rogueCount">0</span></span>
     <div>
-      <button id="nextDayBtn">⏳ Следующий день</button>
-      <button id="resetBtn">🔄 Сброс симуляции</button>
+      <button id="nextDayBtn">⏩ День +1</button>
+      <button id="autoToggleBtn">▶ АВТО-ЖИЗНЬ</button>
+      <button id="resetBtn">🔄 Сброс</button>
     </div>
   </div>
-  <canvas id="gameCanvas" width="1000" height="600"></canvas>
-  <div style="color:#f5e0b0; margin-top: 8px; font-size: 14px;">🖱️ Кликни на льва, чтобы узнать его историю и автора</div>
+
+  <div id="canvas-container">
+    <canvas id="gameCanvas" width="1200" height="700"></canvas>
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoomInBtn" title="Приблизить">+</button>
+      <button class="zoom-btn zoom-reset" id="zoomResetBtn" title="Сброс">⊡</button>
+      <button class="zoom-btn" id="zoomOutBtn" title="Отдалить">−</button>
+    </div>
+  </div>
+
+  <div style="color:#c4a96a; margin: 6px 0; font-size: 12px; text-align:center;">
+    🖱️ Кликни на льва — инфо | 🔍 Колёсико/кнопки — зум | 🖐️ Перетаскивай карту
+  </div>
 </div>
 
-<!-- Всплывающее окно -->
+<div class="overlay" id="overlay"></div>
+
+<div class="dialog-log" id="dialogLog">
+  <strong>📜 ХРОНИКИ ПРАЙДЛЕНДА:</strong>
+  <div id="logEntries">
+    <div class="entry">🌅 Рассвет. Саванна пробуждается...</div>
+  </div>
+</div>
+
 <div id="character-popup">
   <button class="close-popup" id="closePopup">✖</button>
-  <!-- !!! ПОРТРЕТ ЛЬВА (АВТОМАТИЧЕСКИ ИЗ ПОЛЯ portrait) -->
   <img id="popupPortrait" class="lion-portrait" src="" alt="портрет" style="display:none;">
   <h3 id="popupName"></h3>
   <p><strong>👤 Автор:</strong> <span id="popupAuthor"></span></p>
   <p><strong>🏠 Прайд:</strong> <span id="popupPride"></span></p>
   <p><strong>📋 Статус:</strong> <span id="popupStatus"></span></p>
   <p><strong>🎭 Настроение:</strong> <span id="popupMood"></span></p>
-  <p><strong>📅 Возраст:</strong> <span id="popupAge"></span> лет</p>
-  <p><strong>⚥ Пол:</strong> <span id="popupGender"></span></p>
+  <p><strong>🎯 Действие:</strong> <span id="popupAction"></span></p>
+  <p><strong>📅 Возраст:</strong> <span id="popupAge"></span> лет | <strong>⚥</strong> <span id="popupGender"></span></p>
   <p>🍖 Голод: <span id="popupHunger"></span>%</p>
-  <div class="stat-bar"><div class="stat-fill" id="hungerFill" style="width: 70%;"></div></div>
+  <div class="stat-bar"><div class="stat-fill" id="hungerFill" style="width:70%; background:#e6b422;"></div></div>
   <p>💧 Жажда: <span id="popupThirst"></span>%</p>
-  <div class="stat-bar"><div class="stat-fill" id="thirstFill" style="width: 50%; background: #3498db;"></div></div>
+  <div class="stat-bar"><div class="stat-fill" id="thirstFill" style="width:50%; background:#3498db;"></div></div>
   <p>❤️ Здоровье: <span id="popupHealth"></span>%</p>
-  <div class="stat-bar"><div class="stat-fill" id="healthFill" style="width: 90%; background: #e74c3c;"></div></div>
-  <p><strong>🧠 Память:</strong> <em>«<span id="popupMemory"></span>»</em></p>
-  <p style="margin-top:10px;"><strong>🐾 Детёныш:</strong> <span id="popupCub"></span></p>
-  <p style="font-size:11px; color:#755c34; margin-top:8px;"><strong>🆔 ID:</strong> <span id="popupId"></span></p>
+  <div class="stat-bar"><div class="stat-fill" id="healthFill" style="width:90%; background:#e74c3c;"></div></div>
+  <p><strong>📊 Статистика в прайде:</strong></p>
+  <p style="font-size:11px; margin:2px 0;">📆 Дней в прайде: <span id="popupDaysInPride"></span></p>
+  <p style="font-size:11px; margin:2px 0;">🎯 Участвовал в охотах: <span id="popupHunts"></span></p>
+  <p style="font-size:11px; margin:2px 0;">⚔️ Побед в битвах: <span id="popupBattles"></span></p>
+  <p style="font-size:11px; margin:2px 0;">🐾 Выращено детёнышей: <span id="popupCubsRaised"></span></p>
+  <p><strong>🧠 Память (последние 4):</strong></p>
+  <ul id="popupMemories" style="font-size:11px; margin:5px 0; padding-left:18px;"></ul>
+  <p style="margin-top:8px;"><strong>🐾 Детёныш:</strong> <span id="popupCub"></span></p>
+  <p style="font-size:10px; color:#755c34;"><strong>🆔:</strong> <span id="popupId"></span></p>
 </div>
 
-<!-- Список погибших -->
 <div class="dead-list" id="deadListContainer">
   <strong>💀 ПАНТЕОН ПАВШИХ:</strong>
   <div id="deadEntries">Пока все живы</div>
 </div>
 
 <script>
-  (function() {
-    // ============================================================
-    // !!! КОНФИГУРАЦИЯ КАРТЫ — МЕНЯЙ КООРДИНАТЫ И НАЗВАНИЯ ЛОКАЦИЙ
-    // ============================================================
-    const MAP_WIDTH = 1000;
-    const MAP_HEIGHT = 600;
+(function() {
+  // ==================== КАРТА ====================
+  const MAP_WIDTH = 1200;
+  const MAP_HEIGHT = 700;
 
-    // !!! ЛОКАЦИИ НА КАРТЕ (x,y — центр локации)
-    const locations = [
-      { name: "СКАЛА СОВЕТА",     x: 200, y: 140, type: "pride_spot", color: "#8b7355" },
-      { name: "ВОДОПОЙ ЖИЗНИ",    x: 750, y: 110, type: "water",       color: "#4a90d9" },
-      { name: "САВАННА ТЕНЕЙ",    x: 500, y: 430, type: "pride_spot", color: "#6b8c42" },
-      { name: "ХОЛМ ОДИНОКИХ",    x: 80,  y: 470, type: "solitude",   color: "#8c7a6b" },
-      { name: "ГРАНИЦА КОГТЕЙ",   x: 860, y: 440, type: "battlefield",color: "#a0522d" },
-      { name: "РОЩА ШЕПЧУЩИХ",    x: 400, y: 190, type: "pride_spot", color: "#5c8a3c" },
-      { name: "РУИНЫ КОРОЛЕЙ",    x: 630, y: 320, type: "pride_spot", color: "#9b8c6b" },
-      { name: "ИСТОЧНИК ЗВЁЗД",   x: 920, y: 250, type: "water",       color: "#5b9bd5" },
-      { name: "ЛОГОВО ИЗГНАННИКОВ",x: 280, y: 520, type: "solitude",   color: "#6b5b4a" }
-    ];
+  const locations = [
+    { name: "СКАЛА СОВЕТА",     x: 240, y: 160, type: "pride_spot", color: "#8b7355" },
+    { name: "ВОДОПОЙ ЖИЗНИ",    x: 850, y: 120, type: "water",       color: "#4a90d9" },
+    { name: "САВАННА ТЕНЕЙ",    x: 600, y: 480, type: "pride_spot", color: "#6b8c42" },
+    { name: "ХОЛМ ОДИНОКИХ",    x: 90,  y: 520, type: "solitude",   color: "#8c7a6b" },
+    { name: "ГРАНИЦА КОГТЕЙ",   x: 1000,y: 480, type: "battlefield",color: "#a0522d" },
+    { name: "РОЩА ШЕПЧУЩИХ",    x: 480, y: 220, type: "pride_spot", color: "#5c8a3c" },
+    { name: "РУИНЫ КОРОЛЕЙ",    x: 750, y: 350, type: "pride_spot", color: "#9b8c6b" },
+    { name: "ИСТОЧНИК ЗВЁЗД",   x: 1080,y: 280, type: "water",       color: "#5b9bd5" },
+    { name: "ЛОГОВО ИЗГНАННИКОВ",x:320, y:580, type: "solitude",     color: "#6b5b4a" },
+    { name: "ЗЕМЛИ БЕЗГРИВЫХ",  x: 150, y: 80,  type: "rogue_den",   color: "#4a0000" }
+  ];
 
-    // ============================================================
-    // !!! ГЛАВНЫЙ МАССИВ ЛЬВОВ — ВСТАВЛЯЙ СЮДА НОВЫХ ПЕРСОНАЖЕЙ !!!
-    // ============================================================
-    // КАЖДЫЙ ЛЕВ — ЭТО ОБЪЕКТ СО СЛЕДУЮЩИМИ ПОЛЯМИ:
-    // 
-    // id:         УНИКАЛЬНЫЙ ID (например "lion1", "lion_custom_1")
-    // name:       ИМЯ ЛЬВА (строка)
-    // author:     АВТОР / ХОЗЯИН ПЕРСОНАЖА (строка)
-    // pride:      НАЗВАНИЕ ПРАЙДА (должно совпадать с именем локации или "Одиночка")
-    // status:     РОЛЬ В ПРАЙДЕ ("Вожак", "Охотница", "Разведчик", "Новичок", "Изгнанник" и т.д.)
-    // mood:       НАСТРОЕНИЕ ("Величественный", "Грустная", "Злой" — что угодно)
-    // hunger:     ГОЛОД от 0 до 100 (100 = сыт)
-    // thirst:     ЖАЖДА от 0 до 100 (100 = напился)
-    // health:     ЗДОРОВЬЕ от 0 до 100 (0 = смерть)
-    // memory:     МЫСЛИ / ПАМЯТЬ (строка в кавычках)
-    // x, y:       КООРДИНАТЫ НА КАРТЕ (поставь рядом с локацией его прайда)
-    // hasCub:     ЕСТЬ ЛИ ДЕТЁНЫШ (true/false) — только через админа!
-    // isMale:     ПОЛ: true = самец (с гривой), false = самка
-    // age:        ВОЗРАСТ В ГОДАХ (число)
-    // alive:      ЖИВ ИЛИ МЁРТВ (true/false)
-    // deathReason:ПРИЧИНА СМЕРТИ (только если alive: false) — "от голода", "в драке", "старость"
-    // portrait:   !!! ПУТЬ К ФАЙЛУ ИЗОБРАЖЕНИЯ (например "images/lion1.png")
-    // ============================================================
+  // ============================================================
+  // !!! ГЛАВНЫЙ МАССИВ ЛЬВОВ !!!
+  // !!! ВСТАВЛЯЙ НОВЫХ ЛЬВОВ ПЕРЕД ЗАКРЫВАЮЩЕЙ СКОБКОЙ ] !!!
+  // ============================================================
+  let lions = [
+    {
+      id: "lion_askari",
+      name: "Аскари", author: "ZooKeeper",
+      pride: "СКАЛА СОВЕТА", status: "Вожак", mood: "Величественный",
+      currentAction: "Патрулирует Скалу", isRogue: false,
+      hunger: 80, thirst: 85, health: 95,
+      isMale: true, age: 7, hasCub: false, alive: true, deathReason: "",
+      memories: ["Стал вожаком Скалы Совета", "Отразил атаку безгривого"],
+      daysInPride: 120, huntsParticipated: 45, battlesWon: 12, cubsRaised: 3,
+      x: 250, y: 155, targetX: 250, targetY: 155,
+      portrait: "images/askari.png", speed: 0.7, personality: "leader"
+    },
+    {
+      id: "lion_nala",
+      name: "Нала", author: "SafariHeart",
+      pride: "СКАЛА СОВЕТА", status: "Главная охотница", mood: "Сосредоточена",
+      currentAction: "Ведёт охоту", isRogue: false,
+      hunger: 55, thirst: 65, health: 85,
+      isMale: false, age: 5, hasCub: true, alive: true, deathReason: "",
+      memories: ["Стала главной охотницей", "Родила детёныша"],
+      daysInPride: 90, huntsParticipated: 60, battlesWon: 3, cubsRaised: 1,
+      x: 220, y: 180, targetX: 220, targetY: 180,
+      portrait: "images/nala.png", speed: 0.9, personality: "hunter"
+    },
+    {
+      id: "lion_kopa",
+      name: "Копа", author: "WildSpirit",
+      pride: "САВАННА ТЕНЕЙ", status: "Разведчик", mood: "Насторожен",
+      currentAction: "Осматривает границы", isRogue: false,
+      hunger: 40, thirst: 45, health: 70,
+      isMale: true, age: 4, hasCub: false, alive: true, deathReason: "",
+      memories: ["Заметил безгривого у границы", "Доложил вожаку"],
+      daysInPride: 60, huntsParticipated: 10, battlesWon: 2, cubsRaised: 0,
+      x: 610, y: 475, targetX: 610, targetY: 475,
+      portrait: "images/kopa.png", speed: 1.1, personality: "scout"
+    },
+    {
+      id: "lion_zuri",
+      name: "Зури", author: "MoonLion",
+      pride: "Одиночка", status: "Изгнанница", mood: "Одинокая",
+      currentAction: "Ищет убежище", isRogue: false,
+      hunger: 25, thirst: 30, health: 45,
+      isMale: false, age: 3, hasCub: false, alive: true, deathReason: "",
+      memories: ["Изгнана из прайда", "Выживает одна"],
+      daysInPride: 0, huntsParticipated: 5, battlesWon: 0, cubsRaised: 0,
+      x: 85, y: 510, targetX: 85, targetY: 510,
+      portrait: "images/zuri.png", speed: 0.6, personality: "loner"
+    },
+    {
+      id: "lion_mahadi",
+      name: "Махади", author: "GoldenMane",
+      pride: "РУИНЫ КОРОЛЕЙ", status: "Старейшина", mood: "Мудрый",
+      currentAction: "Греется на камнях", isRogue: false,
+      hunger: 65, thirst: 70, health: 50,
+      isMale: true, age: 13, hasCub: false, alive: true, deathReason: "",
+      memories: ["Помнит падение старого королевства", "Хранит тайны Руин"],
+      daysInPride: 200, huntsParticipated: 80, battlesWon: 20, cubsRaised: 10,
+      x: 760, y: 340, targetX: 760, targetY: 340,
+      portrait: "images/mahadi.png", speed: 0.4, personality: "elder"
+    },
+    {
+      id: "lion_tayo",
+      name: "Тайо", author: "YoungPride",
+      pride: "СКАЛА СОВЕТА", status: "Подросток", mood: "Беспечный",
+      currentAction: "Учится охотиться", isRogue: false,
+      hunger: 70, thirst: 75, health: 92,
+      isMale: true, age: 2, hasCub: false, alive: true, deathReason: "",
+      memories: ["Родился в прайде Скалы Совета", "Мечтает стать вожаком"],
+      daysInPride: 30, huntsParticipated: 2, battlesWon: 0, cubsRaised: 0,
+      x: 270, y: 190, targetX: 270, targetY: 190,
+      portrait: "images/tayo.png", speed: 1.0, personality: "scout"
+    },
+    {
+      id: "rogue_scar",
+      name: "Шрам", author: "Система",
+      pride: "Безгривый", status: "Безгривый захватчик", mood: "Голодный до власти",
+      currentAction: "Выслеживает прайд", isRogue: true,
+      hunger: 50, thirst: 60, health: 85,
+      isMale: true, age: 10, hasCub: false, alive: true, deathReason: "",
+      memories: ["Изгнан из прайда много лет назад", "Жаждет захватить Скалу Совета"],
+      daysInPride: 0, huntsParticipated: 15, battlesWon: 8, cubsRaised: 0,
+      x: 160, y: 70, targetX: 160, targetY: 70,
+      portrait: "images/rogue.png", speed: 1.0, personality: "warrior"
+    }
 
-    let lions = [
-      // ========================
-      // !!! ПРИМЕР ЛЬВА №1 !!!
-      // ========================
-      {
-        id: "параша",
-        name: "Поверстрайк",
-        author: "ХАРЛАН",            // !!! ИМЯ АВТОРА
-        pride: "СКАЛА СОВЕТА",
-        status: "говно",
-        mood: "Величественный",
-        hunger: 85,
-        thirst: 90,
-        health: 95,
-        memory: "Я охраняю эти земли. Никто не пройдёт через Скалу Совета.",
-        x: 215,
-        y: 135,
-        hasCub: false,
-        isMale: true,
-        age: 7,
-        alive: true,
-        deathReason: "",
-        portrait: "FFF.png"   // !!! ПУТЬ К КАРТИНКЕ (положи в папку images/)
-      },
+    // =====================================================
+    // !!! ВСТАВЛЯЙ НОВЫХ ЛЬВОВ СЮДА (ПЕРЕД ЗАКРЫВАЮЩЕЙ СКОБКОЙ ]) !!!
+    // =====================================================
+  ];
 
-      // ========================
-      // !!! ПРИМЕР ЛЬВА №2 !!!
-      // ========================
-      {
-        id: "lion_nala",
-        name: "Нала",
-        author: "SafariHeart",          // !!! АВТОР
-        pride: "СКАЛА СОВЕТА",
-        status: "Охотница",
-        mood: "Сосредоточена",
-        hunger: 60,
-        thirst: 70,
-        health: 88,
-        memory: "Сегодня хороший день для охоты. Детёныш ждёт меня.",
-        x: 185,
-        y: 155,
-        hasCub: true,                   // !!! ДЕТЁНЫШ ЕСТЬ (ставишь true если админ разрешил)
-        isMale: false,
-        age: 5,
-        alive: true,
-        deathReason: "",
-        portrait: "images/nala.png"     // !!! КАРТИНКА
-      },
+  // ==================== СОСТОЯНИЕ ====================
+  let deadLions = [];
+  let currentDay = 1;
+  let autoTimerInterval = null;
+  let secondsUntilNextDay = 1200; // 20 минут
+  let dialogLog = [];
+  const MAX_LOG = 70;
 
-      // ========================
-      // !!! ПРИМЕР ЛЬВА №3 !!!
-      // ========================
-      {
-        id: "lion_kopa",
-        name: "Копа",
-        author: "WildSpirit",
-        pride: "САВАННА ТЕНЕЙ",
-        status: "Разведчик",
-        mood: "Насторожен",
-        hunger: 45,
-        thirst: 50,
-        health: 72,
-        memory: "Чужаки замечены у Границы Когтей. Надо предупредить прайд.",
-        x: 510,
-        y: 425,
-        hasCub: false,
-        isMale: true,
-        age: 4,
-        alive: true,
-        deathReason: "",
-        portrait: "images/kopa.png"
-      },
+  // ==================== ЗУМ ====================
+  let zoomLevel = 1;
+  let panX = 0, panY = 0;
+  let isPanning = false;
+  let panStartX = 0, panStartY = 0;
+  let panStartPanX = 0, panStartPanY = 0;
+  const MIN_ZOOM = 0.4;
+  const MAX_ZOOM = 3.0;
 
-      // ========================
-      // !!! ПРИМЕР ЛЬВА №4 (ОДИНОЧКА) !!!
-      // ========================
-      {
-        id: "lion_zuri",
-        name: "Зури",
-        author: "MoonLion",
-        pride: "Одиночка",              // !!! ОДИНОЧКА — НЕ ПРИНАДЛЕЖИТ НИ К КАКОМУ ПРАЙДУ
-        status: "Изгнанница",
-        mood: "Грустная",
-        hunger: 30,
-        thirst: 35,
-        health: 50,
-        memory: "Меня выгнали из прайда. Я ищу новый дом...",
-        x: 75,
-        y: 465,
-        hasCub: false,
-        isMale: false,
-        age: 3,
-        alive: true,
-        deathReason: "",
-        portrait: "images/zuri.png"
-      },
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const container = document.getElementById('canvas-container');
+  const imageCache = {};
 
-      // ========================
-      // !!! ПРИМЕР ЛЬВА №5 !!!
-      // ========================
-      {
-        id: "lion_mahadi",
-        name: "Махади",
-        author: "GoldenMane",
-        pride: "РУИНЫ КОРОЛЕЙ",
-        status: "Старейшина",
-        mood: "Мудрый",
-        hunger: 70,
-        thirst: 75,
-        health: 55,
-        memory: "Руины помнят великих королей прошлого. Я — последний из них.",
-        x: 640,
-        y: 310,
-        hasCub: false,
-        isMale: true,
-        age: 13,
-        alive: true,
-        deathReason: "",
-        portrait: "images/mahadi.png"
-      },
+  // ==================== БАЗЫ ДАННЫХ ====================
+  const DIALOGUES = {
+    leader: [
+      "Я — хранитель этого прайда!", "Никто не посмеет угрожать моим львам!",
+      "Скала Совета — наш дом. Навсегда.", "Чувствуете? Ветер принёс запах чужака...",
+      "Держитесь вместе. В единстве — сила!"
+    ],
+    hunter: [
+      "Тише... я слышу шаги добычи.", "Нужно накормить прайд. Это моя задача.",
+      "Мой детёныш — моё всё.", "Быстрее ветра, острее когтей.",
+      "Сегодня охота будет удачной!"
+    ],
+    scout: [
+      "Граница чиста. Можно не беспокоиться.", "Я заметил следы... крупные.",
+      "Безгривый был здесь. Нужно предупредить!", "В высокой траве кто-то прячется.",
+      "Докладываю: всё под контролем."
+    ],
+    loner: [
+      "Может, сегодня меня примут?", "Одиночество убивает медленно...",
+      "Я слышу рёв прайда. Они так близко.", "Никому не нужна одинокая львица.",
+      "Я докажу, что достойна!"
+    ],
+    elder: [
+      "В моё время львы были другими...", "Эти руины видели величие.",
+      "Молодёжь не ценит мудрость.", "Каждый шрам — урок, каждый урок — сила.",
+      "Присядь, я расскажу тебе о великих королях."
+    ],
+    warrior: [
+      "Кровь за кровь! Коготь за коготь!", "Я не боюсь смерти. Я боюсь бесчестья.",
+      "За прайд! До последнего вздоха!", "Трус не достоин зваться львом.",
+      "Победа или смерть!"
+    ]
+  };
 
-      // ========================
-      // !!! ПРИМЕР МЁРТВОГО ЛЬВА (уже погиб, отображается в пантеоне) !!!
-      // ========================
-      {
-        id: "lion_tano",
-        name: "Тано",
-        author: "DarkMane",
-        pride: "ГРАНИЦА КОГТЕЙ",
-        status: "Воин",
-        mood: "Мёртв",
-        hunger: 0,
-        thirst: 0,
-        health: 0,
-        memory: "Я погиб, защищая прайд.",
-        x: 860,
-        y: 440,
-        hasCub: false,
-        isMale: true,
-        age: 9,
-        alive: false,                   // !!! МЁРТВ
-        deathReason: "Пал в битве с прайдом Саванны Теней",  // !!! ПРИЧИНА СМЕРТИ
-        portrait: "images/tano.png"
+  const ACTIONS = {
+    leader: ["Патрулирует границы", "Рычит на ветер", "Собирает прайд", "Смотрит на закат", "Оценивает угрозы"],
+    hunter: ["Выслеживает антилопу", "Несёт добычу", "Пьёт у водопоя", "Играет с детёнышем", "Тренирует молодых"],
+    scout: ["Осматривает следы", "Бежит с донесением", "Прячется в траве", "Карабкается на холм", "Возвращается в прайд"],
+    loner: ["Бредёт сквозь саванну", "Ищет воду", "Просится в прайд", "Прячется от гиен", "Смотрит на звёзды"],
+    elder: ["Греется на солнце", "Рассказывает легенду", "Вспоминает былое", "Даёт мудрый совет", "Наблюдает за прайдом"],
+    warrior: ["Точит когти о камень", "Рычит в темноту", "Вызывает на дуэль", "Охраняет рубежи", "Готовится к атаке"]
+  };
+
+  function preloadImages() {
+    lions.forEach(lion => {
+      if (lion.portrait && lion.portrait.trim() !== '') {
+        const img = new Image();
+        img.src = lion.portrait;
+        imageCache[lion.id] = img;
       }
+    });
+  }
 
-      // =====================================================
-      // !!! ЧТОБЫ ДОБАВИТЬ НОВОГО ЛЬВА — СКОПИРУЙ БЛОК ВЫШЕ !!!
-      // !!! И ВСТАВЬ ЕГО СЮДА, ПЕРЕД ЗАКРЫВАЮЩЕЙ СКОБКОЙ ]  !!!
-      // !!! НЕ ЗАБУДЬ ЗАПЯТУЮ МЕЖДУ БЛОКАМИ !!!
-      // =====================================================
-    ];
+  function initLions() {
+    deadLions = lions.filter(l => !l.alive);
+    lions = lions.filter(l => l.alive);
+    preloadImages();
+  }
 
-    // ============================================================
-    // НИЖЕ ТЕХНИЧЕСКИЙ КОД — НЕ ТРОГАЙ, ЕСЛИ НЕ УВЕРЕН
-    // ============================================================
-    let deadLions = [];
-    let currentDay = 1;
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
+  // ==================== ПЕРЕДВИЖЕНИЕ ====================
+  function moveLions() {
+    lions.forEach(lion => {
+      if (!lion.alive || lion.speed === 0) return;
+      const dx = lion.targetX - lion.x;
+      const dy = lion.targetY - lion.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 2) {
+        lion.x += (dx/dist) * lion.speed * 2.5;
+        lion.y += (dy/dist) * lion.speed * 2.5;
+      } else {
+        pickNewTarget(lion);
+      }
+    });
+  }
 
-    // Загружаем изображения
-    const imageCache = {};
-    function preloadImages() {
-      lions.forEach(lion => {
-        if (lion.portrait && lion.portrait.trim() !== '') {
-          const img = new Image();
-          img.src = lion.portrait;
-          imageCache[lion.id] = img;
-        }
-      });
-    }
-
-    // Разделяем живых и мёртвых при инициализации
-    function initLions() {
-      deadLions = lions.filter(l => !l.alive);
-      lions = lions.filter(l => l.alive);
-      preloadImages();
-    }
-
-    function simulateDay() {
-      if (lions.length === 0) {
-        alert("⚠️ Все львы мертвы. Нажмите «Сброс симуляции» чтобы начать заново.");
+  function pickNewTarget(lion) {
+    if (lion.thirst < 35) {
+      const waterLoc = locations.filter(l => l.type === 'water');
+      if (waterLoc.length > 0) {
+        const chosen = waterLoc[Math.floor(Math.random()*waterLoc.length)];
+        lion.targetX = chosen.x + (Math.random()-0.5)*40;
+        lion.targetY = chosen.y + (Math.random()-0.5)*40;
+        lion.currentAction = "Идёт к водопою 💧";
         return;
       }
+    }
+    if (lion.pride !== 'Одиночка' && lion.pride !== 'Безгривый') {
+      const prideLoc = locations.find(l => l.name === lion.pride);
+      if (prideLoc && Math.random() < 0.55) {
+        lion.targetX = prideLoc.x + (Math.random()-0.5)*80;
+        lion.targetY = prideLoc.y + (Math.random()-0.5)*80;
+        lion.currentAction = "Возвращается в прайд 🏠";
+        return;
+      }
+    }
+    if (lion.isRogue || lion.status === 'Изгнанный подросток') {
+      const prideLocs = locations.filter(l => l.type === 'pride_spot');
+      if (prideLocs.length > 0 && Math.random() < 0.6) {
+        const target = prideLocs[Math.floor(Math.random()*prideLocs.length)];
+        lion.targetX = target.x + (Math.random()-0.5)*70;
+        lion.targetY = target.y + (Math.random()-0.5)*70;
+        lion.currentAction = "Ищет прайд для захвата... 👹";
+        return;
+      }
+    }
+    lion.targetX = 40 + Math.random()*(MAP_WIDTH-80);
+    lion.targetY = 40 + Math.random()*(MAP_HEIGHT-80);
+    const randActions = ACTIONS[lion.personality] || ACTIONS['loner'];
+    lion.currentAction = randActions[Math.floor(Math.random()*randActions.length)];
+  }
 
-      lions.forEach(lion => {
-        // Естественная убыль
-        lion.hunger = Math.max(0, lion.hunger - (4 + Math.floor(Math.random() * 12)));
-        lion.thirst = Math.max(0, lion.thirst - (3 + Math.floor(Math.random() * 10)));
-        
-        // Одиночки страдают сильнее
-        if (lion.pride === 'Одиночка') {
-          lion.hunger = Math.max(0, lion.hunger - 6);
-          lion.thirst = Math.max(0, lion.thirst - 4);
-          if (lion.mood !== 'Мёртв') lion.mood = 'Подавлен(а)';
-          lion.memory = 'Одиночество истощает...';
+  // ==================== ГЛАВНАЯ СИМУЛЯЦИЯ ДНЯ ====================
+  function simulateDay() {
+    if (lions.length === 0) {
+      addToLog("solo", "Система", null, "Все львы мертвы. Цикл завершён.", null, "danger");
+      updateUI(); return;
+    }
+
+    moveLions();
+    
+    // Начисляем дни в прайде
+    lions.forEach(l => { if (l.alive && l.pride !== 'Одиночка' && l.pride !== 'Безгривый') l.daysInPride += 1; });
+
+    checkTeenageExile();
+
+    // Охота (каждый день есть шанс)
+    simulateHunting();
+
+    for (let i = lions.length-1; i >= 0; i--) {
+      const lion = lions[i];
+      if (!lion.alive) continue;
+
+      lion.hunger = Math.max(0, lion.hunger - (3+Math.floor(Math.random()*9)));
+      lion.thirst = Math.max(0, lion.thirst - (2+Math.floor(Math.random()*7)));
+      if (lion.pride === 'Одиночка' || lion.isRogue) { lion.hunger -= 4; lion.thirst -= 3; }
+
+      locations.forEach(loc => {
+        if (loc.type === 'water' && Math.abs(lion.x-loc.x) < 40 && Math.abs(lion.y-loc.y) < 40) {
+          lion.thirst = Math.min(100, lion.thirst+35);
+          lion.currentAction = "Пьёт 💧";
         }
+      });
 
-        // Водопой — если рядом с водой, восстанавливает жажду
-        locations.forEach(loc => {
-          if (loc.type === 'water' && Math.abs(lion.x - loc.x) < 40 && Math.abs(lion.y - loc.y) < 40) {
-            lion.thirst = Math.min(100, lion.thirst + 25);
-            if (lion.mood === 'Подавлен(а)') lion.mood = 'Спокойный(ая)';
+      if (lion.hunger <= 8) { lion.health -= 18; lion.mood = 'Умирает от голода'; }
+      if (lion.thirst <= 8) { lion.health -= 14; lion.mood = 'Обезвожен(а)'; }
+
+      if (lion.age >= 14 && Math.random() < 0.08) { killLion(lion, "Умер(ла) от старости"); continue; }
+      if (lion.age >= 12 && Math.random() < 0.03) { lion.health -= 25; lion.memories.push('Старость забирает силы'); }
+
+      if (lion.health <= 0) { killLion(lion, lion.deathReason || 'Истощение и раны'); continue; }
+
+      if (lion.hunger > 55 && lion.thirst > 55 && lion.health < 100) {
+        lion.health = Math.min(100, lion.health+4);
+      }
+    }
+
+    generateDramaticEvents();
+    generateDialogues();
+
+    // !!! АВТОМАТИЧЕСКОЕ НАЗНАЧЕНИЕ РОЛЕЙ !!!
+    updatePrideRoles();
+
+    const newlyDead = lions.filter(l => !l.alive);
+    deadLions.push(...newlyDead);
+    lions = lions.filter(l => l.alive);
+
+    // Каждые 15 дней +1 год
+    if (currentDay % 15 === 0) {
+      lions.forEach(l => { if (l.alive) l.age += 1; });
+    }
+
+    currentDay++;
+    updateUI();
+    drawMap();
+  }
+
+  function killLion(lion, reason) {
+    lion.alive = false;
+    lion.deathReason = reason;
+    lion.mood = 'Мёртв';
+    lion.currentAction = 'Покоится с миром';
+    lion.memories.push(`Погиб(ла): ${reason}`);
+    addToLog("danger", lion.name, null, `💀 ПОГИБ(ЛА): ${reason}`, null, "danger");
+  }
+
+  // !!! СИМУЛЯЦИЯ ОХОТЫ !!!
+  function simulateHunting() {
+    const prides = [...new Set(lions.filter(l => l.alive && l.pride !== 'Одиночка' && l.pride !== 'Безгривый').map(l => l.pride))];
+    
+    prides.forEach(prideName => {
+      const members = lions.filter(l => l.alive && l.pride === prideName);
+      const hunters = members.filter(l => l.status === 'Охотница' || l.status === 'Главная охотница' || l.status === 'Охотник');
+      
+      if (hunters.length > 0 && Math.random() < 0.5) {
+        // Успешная охота
+        const success = Math.random() < 0.7;
+        members.forEach(m => {
+          if (success) {
+            m.hunger = Math.min(100, m.hunger + 20);
+            if (m.status === 'Охотница' || m.status === 'Главная охотница' || m.status === 'Охотник') {
+              m.huntsParticipated += 1;
+            }
           }
         });
-
-        // Голод/жажда = урон здоровью
-        if (lion.hunger <= 15) {
-          lion.health -= 12;
-          lion.mood = 'Умирает от голода';
-          lion.memory = 'Я так голоден...';
+        if (success) {
+          const leadHunter = hunters[0];
+          addToLog("solo", leadHunter.name, null, `🎯 Охота прайда ${prideName} успешна! Все сыты.`, null, "friendly");
         }
-        if (lion.thirst <= 15) {
-          lion.health -= 10;
-          lion.mood = 'Обезвожен(а)';
-          lion.memory = 'Воды... ни капли...';
-        }
+      }
+    });
+  }
 
-        // Драки между прайдами
-        if (lion.pride !== 'Одиночка' && Math.random() < 0.2) {
-          const enemies = lions.filter(l => l.alive && l.pride !== lion.pride && l.pride !== 'Одиночка');
-          if (enemies.length > 0 && Math.random() < 0.4) {
-            const damage = 10 + Math.floor(Math.random() * 20);
-            lion.health -= damage;
-            lion.mood = 'Ранен(а) в бою';
-            lion.memory = `Битва с прайдом ${enemies[0].pride} была жестокой. Я получил(а) урон.`;
-            // Ответный урон случайному врагу
-            if (enemies[0]) {
-              enemies[0].health -= Math.floor(damage * 0.7);
-              if (enemies[0].health <= 0) enemies[0].alive = false;
+  // !!! АВТОМАТИЧЕСКОЕ НАЗНАЧЕНИЕ РОЛЕЙ В ПРАЙДЕ !!!
+  function updatePrideRoles() {
+    const prides = [...new Set(lions.filter(l => l.alive && l.pride !== 'Одиночка' && l.pride !== 'Безгривый').map(l => l.pride))];
+    
+    prides.forEach(prideName => {
+      const members = lions.filter(l => l.alive && l.pride === prideName);
+      if (members.length === 0) return;
+
+      // 1. НАЗНАЧЕНИЕ ВОЖАКА
+      let leader = members.find(l => l.status === 'Вожак' || l.status === 'Вожак (захватчик)' || l.status === 'Вожак (предатель)');
+      
+      if (!leader) {
+        // Вожака нет — выбрать самого достойного
+        const males = members.filter(l => l.isMale && l.age >= 4 && !l.isRogue);
+        if (males.length > 0) {
+          // Критерии: победы в битвах > дни в прайде > возраст
+          males.sort((a, b) => {
+            if (b.battlesWon !== a.battlesWon) return b.battlesWon - a.battlesWon;
+            if (b.daysInPride !== a.daysInPride) return b.daysInPride - a.daysInPride;
+            return b.age - a.age;
+          });
+          leader = males[0];
+          leader.status = 'Вожак';
+          leader.mood = 'Гордый';
+          leader.personality = 'leader';
+          leader.memories.push(`Стал вожаком прайда ${prideName} (дней в прайде: ${leader.daysInPride}, побед: ${leader.battlesWon})`);
+          addToLog("promotion", leader.name, null, `👑 НОВЫЙ ВОЖАК! ${leader.name} возглавил прайд ${prideName}!`, null, "promotion");
+        } else {
+          // Нет взрослых самцов — львица-вожак
+          const females = members.filter(l => !l.isMale && l.age >= 3 && !l.isRogue);
+          if (females.length > 0) {
+            females.sort((a, b) => b.daysInPride - a.daysInPride);
+            leader = females[0];
+            leader.status = 'Вожак';
+            leader.mood = 'Решительная';
+            leader.personality = 'leader';
+            leader.memories.push(`Стала вожаком прайда ${prideName} (первая львица-вожак!)`);
+            addToLog("promotion", leader.name, null, `👑 ЛЬВИЦА-ВОЖАК! ${leader.name} возглавила прайд ${prideName}!`, null, "promotion");
+          }
+        }
+      }
+
+      // 2. НАЗНАЧЕНИЕ ГЛАВНОЙ ОХОТНИЦЫ / ГЛАВНОГО ОХОТНИКА
+      let chiefHunter = members.find(l => l.status === 'Главная охотница' || l.status === 'Главный охотник');
+      if (!chiefHunter) {
+        const hunters = members.filter(l => 
+          l.id !== (leader ? leader.id : '') && 
+          l.age >= 3 && !l.isRogue &&
+          (l.status === 'Охотница' || l.status === 'Охотник' || l.status === 'Новичок' || l.status === 'Подросток' || l.status === 'Львёнок')
+        );
+        if (hunters.length > 0) {
+          hunters.sort((a, b) => b.huntsParticipated - a.huntsParticipated);
+          chiefHunter = hunters[0];
+          if (chiefHunter.huntsParticipated >= 5) {
+            chiefHunter.status = chiefHunter.isMale ? 'Главный охотник' : 'Главная охотница';
+            chiefHunter.mood = 'Уверенный(ая)';
+            chiefHunter.personality = 'hunter';
+            chiefHunter.memories.push(`Стал(а) главным охотником прайда ${prideName} (охот: ${chiefHunter.huntsParticipated})`);
+            addToLog("promotion", chiefHunter.name, null, `🏹 ГЛАВНЫЙ ОХОТНИК! ${chiefHunter.name} теперь ведёт охоту прайда ${prideName}!`, null, "promotion");
+          }
+        }
+      }
+
+      // 3. НАЗНАЧЕНИЕ ОХОТНИКОВ (из новичков/львят кто участвовал)
+      members.forEach(m => {
+        if (m.status === 'Новичок' && m.huntsParticipated >= 3 && m.age >= 2) {
+          m.status = m.isMale ? 'Охотник' : 'Охотница';
+          m.memories.push(`Повышен(а) до охотника в прайде ${prideName}`);
+          addToLog("promotion", m.name, null, `⬆️ ${m.name} стал(а) охотником прайда ${prideName}!`, null, "promotion");
+        }
+        if (m.status === 'Львёнок' && m.age >= 1 && m.huntsParticipated >= 1) {
+          m.status = 'Подросток';
+          m.memories.push(`Вырос из львёнка в подростка`);
+        }
+      });
+
+      // 4. НАЗНАЧЕНИЕ РАЗВЕДЧИКА
+      let scout = members.find(l => l.status === 'Разведчик');
+      if (!scout && members.length >= 4) {
+        const candidates = members.filter(l => 
+          l.id !== (leader ? leader.id : '') && 
+          l.id !== (chiefHunter ? chiefHunter.id : '') &&
+          l.age >= 3 && l.isMale && !l.isRogue
+        );
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => b.battlesWon - a.battlesWon);
+          scout = candidates[0];
+          scout.status = 'Разведчик';
+          scout.personality = 'scout';
+          scout.memories.push(`Назначен разведчиком прайда ${prideName}`);
+          addToLog("promotion", scout.name, null, `🔭 ${scout.name} стал разведчиком прайда ${prideName}!`, null, "promotion");
+        }
+      }
+
+      // 5. СТАРЕЙШИНА (автоматически по возрасту)
+      members.forEach(m => {
+        if (m.age >= 10 && m.status !== 'Вожак' && m.status !== 'Старейшина' && m.daysInPride >= 100) {
+          m.status = 'Старейшина';
+          m.personality = 'elder';
+          m.memories.push(`Стал(а) старейшиной прайда ${prideName}`);
+          addToLog("promotion", m.name, null, `🧓 ${m.name} признан(а) старейшиной прайда ${prideName}!`, null, "promotion");
+        }
+      });
+
+      // 6. ПОНИЖЕНИЕ НЕАКТИВНЫХ
+      members.forEach(m => {
+        if (m.status === 'Главная охотница' || m.status === 'Главный охотник') {
+          if (m.huntsParticipated < 10 && currentDay % 30 === 0 && m.daysInPride > 30) {
+            m.status = m.isMale ? 'Охотник' : 'Охотница';
+            m.memories.push(`Понижен(а) с главного охотника из-за недостатка охот`);
+            addToLog("solo", m.name, null, `⬇️ ${m.name} понижен(а) до обычного охотника.`, null, "solo");
+          }
+        }
+      });
+
+      // 7. ПЕРЕДАЧА ДЕТЁНЫШЕЙ (если есть детёныш и львица, повышаем её статус)
+      members.forEach(m => {
+        if (m.hasCub && !m.isMale) {
+          m.cubsRaised += 1;
+          if (m.status === 'Охотница' && m.cubsRaised >= 2) {
+            m.status = 'Главная охотница';
+            m.memories.push(`Повышена до главной охотницы за воспитание детёнышей`);
+            addToLog("cub_born", m.name, null, `🐾 ${m.name} стала главной охотницей благодаря заботе о потомстве!`, null, "cub_born");
+          }
+        }
+      });
+    });
+  }
+
+  // ==================== ИЗГНАНИЕ ПОДРОСТКОВ ====================
+  function checkTeenageExile() {
+    lions.forEach(lion => {
+      if (!lion.alive || lion.isRogue) return;
+      if (lion.pride === 'Одиночка' || lion.pride === 'Безгривый') return;
+      
+      if (lion.isMale && lion.age >= 2 && lion.age <= 4 && 
+          lion.status !== 'Вожак' && lion.status !== 'Вожак (захватчик)' && lion.status !== 'Вожак (предатель)') {
+        
+        const leader = lions.find(l => l.alive && l.pride === lion.pride && 
+          (l.status === 'Вожак' || l.status === 'Вожак (захватчик)' || l.status === 'Вожак (предатель)'));
+        
+        if (leader && Math.random() < 0.2) {
+          if (Math.random() < 0.65) {
+            lion.pride = 'Одиночка';
+            lion.status = 'Изгнанный подросток';
+            lion.isRogue = true;
+            lion.daysInPride = 0;
+            lion.mood = 'Изгнан';
+            lion.currentAction = 'Уходит искать свой прайд...';
+            lion.memories.push(`Изгнан из прайда ${leader.pride} вожаком ${leader.name} (возраст ${lion.age} года)`);
+            leader.memories.push(`Изгнал молодого самца ${lion.name} из прайда`);
+            addToLog("exile", lion.name, leader.name,
+              `🦁 ИЗГНАНИЕ! Вожак ${leader.name} выгоняет подростка ${lion.name} (${lion.age} года). Он становится безгривым!`, null, "exile");
+          } else {
+            const dmg = 15 + Math.floor(Math.random()*25);
+            lion.health -= dmg;
+            leader.health -= 8;
+            lion.mood = 'Дерётся за место!';
+            leader.mood = 'Разъярён';
+            lion.battlesWon += 1;
+            leader.battlesWon += 1;
+            lion.currentAction = 'Сопротивляется изгнанию! ⚔️';
+            leader.currentAction = 'Выгоняет подростка силой! ⚔️';
+            lion.memories.push(`Отказался уходить из прайда, подрался с вожаком ${leader.name}`);
+            leader.memories.push(`Подросток ${lion.name} отказался уходить — пришлось драться`);
+            addToLog("exile", lion.name, leader.name,
+              `⚔️ СОПРОТИВЛЕНИЕ! ${lion.name} отказался уходить! Вожак ${leader.name} выгоняет его силой!`, null, "exile");
+            
+            if (lion.health <= 0) {
+              killLion(lion, `Убит вожаком ${leader.name} при попытке изгнания`);
+            } else if (Math.random() < 0.5) {
+              lion.pride = 'Одиночка';
+              lion.status = 'Изгнанный подросток';
+              lion.isRogue = true;
+              lion.daysInPride = 0;
+              lion.mood = 'Изгнан после драки';
+              lion.currentAction = 'Уходит побеждённым...';
+            } else if (leader.health <= 0) {
+              killLion(leader, `Убит подростком ${lion.name} при попытке изгнания`);
+              lion.status = 'Вожак (захватчик)';
+              lion.isRogue = false;
+              lion.mood = 'Торжествующий';
+              lion.personality = 'leader';
+              lion.memories.push(`Убил вожака ${leader.name} и захватил прайд!`);
+              addToLog("drama", lion.name, null,
+                `👑 ЗАХВАТ! Подросток ${lion.name} УБИЛ вожака и СТАЛ НОВЫМ ВОЖАКОМ!`, null, "drama");
             }
           }
         }
+      }
+    });
+  }
 
-        // Смерть
-        if (lion.health <= 0) {
-          lion.alive = false;
-          if (!lion.deathReason) lion.deathReason = 'Истощение и раны';
-          lion.mood = 'Мёртв';
-          return;
-        }
+  // ==================== ДРАМАТИЧЕСКИЕ СОБЫТИЯ ====================
+  function generateDramaticEvents() {
+    const rogues = lions.filter(l => l.alive && l.isRogue);
+    const prideLeaders = lions.filter(l => l.alive && 
+      (l.status === 'Вожак' || l.status === 'Вожак (захватчик)' || l.status === 'Вожак (предатель)') && !l.isRogue);
+    const cubs = lions.filter(l => l.alive && l.hasCub);
+    const loners = lions.filter(l => l.alive && l.pride === 'Одиночка' && !l.isRogue);
 
-        // Восстановление здоровья
-        if (lion.hunger > 55 && lion.thirst > 55 && lion.health < 100) {
-          lion.health = Math.min(100, lion.health + 4);
-        }
+    rogues.forEach(rogue => {
+      prideLeaders.forEach(leader => {
+        const dist = Math.sqrt((rogue.x-leader.x)**2 + (rogue.y-leader.y)**2);
+        if (dist < 70 && Math.random() < 0.3) {
+          const dmg = 15 + Math.floor(Math.random()*25);
+          leader.health -= dmg;
+          rogue.health -= 8;
+          leader.battlesWon += 1;
+          rogue.battlesWon += 1;
+          leader.mood = 'Ранен(а) в бою с безгривым!';
+          leader.memories.push(`Атакован(а) безгривым ${rogue.name}!`);
+          rogue.memories.push(`Атаковал вожака ${leader.name}!`);
+          addToLog("betrayal", rogue.name, leader.name, 
+            "👹 НАПАДЕНИЕ БЕЗГРИВОГО!", "Кровь пролилась на землю саванны...", "betrayal");
 
-        // Одиночка может быть принят в прайд
-        if (lion.pride === 'Одиночка' && lion.health > 50 && Math.random() < 0.08) {
-          const prideLocations = locations.filter(l => l.type === 'pride_spot');
-          if (prideLocations.length > 0) {
-            const chosen = prideLocations[Math.floor(Math.random() * prideLocations.length)];
-            lion.pride = chosen.name;
-            lion.status = 'Новичок';
-            lion.mood = 'Надеющийся';
-            lion.memory = `Меня приняли в прайд «${chosen.name}»! Новая жизнь начинается.`;
-            lion.x = chosen.x + (Math.random() - 0.5) * 40;
-            lion.y = chosen.y + (Math.random() - 0.5) * 40;
+          if (leader.health <= 0) {
+            const oldPride = leader.pride;
+            leader.alive = false;
+            leader.deathReason = `Убит безгривым ${rogue.name} в бою за прайд`;
+            rogue.pride = oldPride;
+            rogue.status = 'Вожак (захватчик)';
+            rogue.isRogue = false;
+            rogue.daysInPride = 0;
+            rogue.mood = 'Торжествующий';
+            rogue.personality = 'leader';
+            rogue.memories.push(`Захватил прайд ${oldPride}, убив вожака ${leader.name}!`);
+            addToLog("drama", rogue.name, null, 
+              `👑 ЗАХВАТ ПРАЙДА! ${rogue.name} убил ${leader.name} и стал новым вожаком ${oldPride}!`, null, "drama");
+            lions.filter(l => l.pride === oldPride).forEach(l => {
+              l.memories.push(`Новый вожак: ${rogue.name} (захватил прайд)`);
+              l.mood = 'Потрясён(а)';
+            });
           }
         }
+      });
 
-        // Старость увеличивает шанс смерти
-        if (lion.age > 11 && Math.random() < 0.05) {
-          lion.health -= 25;
-          lion.memory = 'Старость берёт своё...';
-        }
-
-        // Детёныш растёт (каждые 10 дней +1 год)
-        if (lion.hasCub && currentDay % 10 === 0 && lion.age < 15) {
-          lion.age += 1;
+      cubs.forEach(mom => {
+        const dist = Math.sqrt((rogue.x-mom.x)**2 + (rogue.y-mom.y)**2);
+        if (dist < 60 && Math.random() < 0.25 && mom.hasCub) {
+          mom.hasCub = false;
+          mom.mood = 'Опустошена';
+          mom.health -= 20;
+          mom.memories.push(`Детёныш убит безгривым ${rogue.name}...`);
+          rogue.memories.push(`Убил детёныша ${mom.name}`);
+          addToLog("betrayal", rogue.name, mom.name, "💔 ДЕТОУБИЙСТВО! Безгривый убил детёныша!", null, "betrayal");
         }
       });
 
-      // Перенос мёртвых
-      const newlyDead = lions.filter(l => !l.alive);
-      deadLions.push(...newlyDead);
-      lions = lions.filter(l => l.alive);
+      const females = lions.filter(l => l.alive && !l.isMale && l.pride !== 'Одиночка' && !l.isRogue);
+      females.forEach(female => {
+        const dist = Math.sqrt((rogue.x-female.x)**2 + (rogue.y-female.y)**2);
+        if (dist < 50 && Math.random() < 0.15) {
+          const dmg = 20 + Math.floor(Math.random()*30);
+          rogue.health -= dmg;
+          female.battlesWon += 1;
+          female.memories.push(`Атаковала безгривого ${rogue.name} защищая прайд!`);
+          addToLog("drama", female.name, rogue.name, `🦁 ЛЬВИЦА АТАКУЕТ! ${female.name} наносит урон безгривому!`, null, "drama");
+          if (rogue.health <= 0) killLion(rogue, `Убит львицей ${female.name} при защите прайда`);
+        }
+      });
+    });
 
-      currentDay++;
-      updateUI();
-      drawMap();
-    }
-
-    function drawMap() {
-      ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-      
-      // Фон — пиксельная саванна
-      ctx.fillStyle = '#c2a65c';
-      ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-      
-      // Трава (пиксельная)
-      for (let i = 0; i < 300; i++) {
-        const gx = Math.floor(Math.random() * MAP_WIDTH / 4) * 4;
-        const gy = Math.floor(Math.random() * MAP_HEIGHT / 4) * 4;
-        ctx.fillStyle = Math.random() > 0.5 ? '#8fbc3b' : '#6d9a2c';
-        ctx.fillRect(gx, gy, 4, 4);
+    prideLeaders.forEach(leader => {
+      if (leader.age >= 11 && Math.random() < 0.06) {
+        const prideMembers = lions.filter(l => l.alive && l.pride === leader.pride && l.id !== leader.id && !l.isRogue);
+        if (prideMembers.length > 0) {
+          const betrayer = prideMembers[Math.floor(Math.random()*prideMembers.length)];
+          betrayer.status = 'Вожак (предатель)';
+          betrayer.mood = 'Амбициозный';
+          betrayer.personality = 'leader';
+          const oldPride = leader.pride;
+          leader.status = 'Изгнанник';
+          leader.pride = 'Одиночка';
+          leader.daysInPride = 0;
+          leader.health -= 25;
+          leader.mood = 'Предан(а)';
+          leader.memories.push(`Предан(а) ${betrayer.name} и изгнан(а) из прайда ${oldPride}!`);
+          betrayer.memories.push(`Предал(а) старого вожака ${leader.name} и захватил(а) прайд ${oldPride}!`);
+          lions.filter(l => l.pride === oldPride && l.id !== leader.id).forEach(l => {
+            l.memories.push(`Переворот: ${betrayer.name} сверг(ла) ${leader.name}`);
+          });
+          addToLog("betrayal", betrayer.name, leader.name,
+            `🗡️ ПРЕДАТЕЛЬСТВО! ${betrayer.name} сверг(ла) вожака ${leader.name}!`, null, "betrayal");
+        }
       }
+    });
 
-      // Локации
-      locations.forEach(loc => {
-        ctx.fillStyle = loc.color;
-        ctx.fillRect(loc.x - 10, loc.y - 10, 20, 20);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px "Courier New"';
-        ctx.textAlign = 'center';
-        ctx.fillText(loc.name, loc.x, loc.y - 16);
-        ctx.textAlign = 'start';
-        
-        // Иконка типа
-        if (loc.type === 'water') {
-          ctx.fillStyle = '#87ceeb';
-          ctx.fillRect(loc.x - 4, loc.y - 4, 8, 8);
-        } else if (loc.type === 'battlefield') {
-          ctx.fillStyle = '#ff4444';
-          ctx.fillRect(loc.x - 3, loc.y - 3, 6, 6);
-        }
-      });
-
-      // Львы
-      lions.forEach(lion => {
-        const lx = Math.round(lion.x);
-        const ly = Math.round(lion.y);
-        
-        // Попытка отрисовать спрайт из файла
-        if (imageCache[lion.id] && imageCache[lion.id].complete && imageCache[lion.id].naturalWidth > 0) {
-          ctx.drawImage(imageCache[lion.id], lx - 12, ly - 14, 28, 28);
+    loners.forEach(loner => {
+      const prideLoc = locations.filter(l => l.type === 'pride_spot')[Math.floor(Math.random()*locations.filter(l=>l.type==='pride_spot').length)];
+      if (prideLoc && Math.random() < 0.08 && loner.health > 40) {
+        if (Math.random() < 0.4) {
+          loner.pride = prideLoc.name;
+          loner.status = 'Новичок';
+          loner.daysInPride = 0;
+          loner.mood = 'Счастлив(а)';
+          loner.memories.push(`Принят(а) в прайд ${prideLoc.name}!`);
+          addToLog("drama", loner.name, null, `🎉 ${loner.name} принят(а) в прайд ${prideLoc.name}!`, null, "drama");
         } else {
-          // Пиксельный спрайт-заглушка
-          ctx.fillStyle = lion.isMale ? '#c99b3b' : '#dbb45c';
-          ctx.fillRect(lx - 7, ly - 5, 14, 12);
-          if (lion.isMale) {
-            ctx.fillStyle = '#7a4d1a';
-            ctx.fillRect(lx - 9, ly - 8, 18, 7);
+          loner.mood = 'Отвергнут(а)';
+          loner.memories.push(`Отказано в приёме прайдом ${prideLoc.name}`);
+          addToLog("solo", loner.name, null, `🚫 ${loner.name} просился в ${prideLoc.name}, но получил отказ...`, null, "solo");
+        }
+      }
+    });
+  }
+
+  // ==================== ДИАЛОГИ ====================
+  function generateDialogues() {
+    for (let i=0; i<lions.length; i++) {
+      for (let j=i+1; j<lions.length; j++) {
+        const l1 = lions[i], l2 = lions[j];
+        if (!l1.alive || !l2.alive) continue;
+        const dist = Math.sqrt((l1.x-l2.x)**2 + (l1.y-l2.y)**2);
+        if (dist < 55 && Math.random() < 0.12) {
+          if (l1.pride === l2.pride && !l1.isRogue && !l2.isRogue) {
+            const d1 = DIALOGUES[l1.personality] || DIALOGUES['loner'];
+            const d2 = DIALOGUES[l2.personality] || DIALOGUES['loner'];
+            addToLog("friendly", l1.name, l2.name, d1[Math.floor(Math.random()*d1.length)], d2[Math.floor(Math.random()*d2.length)], "friendly");
+          } else if (l1.isRogue || l2.isRogue) {
+            addToLog("danger", l1.name, l2.name, "Я чую кровь...", "Убирайся, безгривый!", "danger");
           }
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(lx - 3, ly - 2, 3, 3);
-          ctx.fillRect(lx + 2, ly - 2, 3, 3);
-          ctx.fillStyle = '#000';
-          ctx.fillRect(lx - 2, ly - 1, 2, 2);
-          ctx.fillRect(lx + 3, ly - 1, 2, 2);
         }
-        
-        // Индикатор здоровья (цветная точка)
-        if (lion.health < 30) ctx.fillStyle = '#ff0000';
-        else if (lion.health < 60) ctx.fillStyle = '#ffaa00';
-        else ctx.fillStyle = '#00ff00';
-        ctx.fillRect(lx - 4, ly + 8, 8, 3);
-        
-        // Имя
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 9px "Courier New"';
-        ctx.textAlign = 'center';
-        ctx.fillText(lion.name, lx, ly - 16);
-        ctx.textAlign = 'start';
-        
-        // Значок детёныша
-        if (lion.hasCub) {
-          ctx.fillStyle = '#ff69b4';
-          ctx.fillRect(lx + 6, ly - 10, 4, 4);
-          ctx.fillText('🐾', lx + 8, ly - 6);
-        }
-      });
+      }
     }
+  }
 
-    function showLionInfo(lion) {
-      document.getElementById('popupName').textContent = lion.name;
-      document.getElementById('popupAuthor').textContent = lion.author;
-      document.getElementById('popupPride').textContent = lion.pride;
-      document.getElementById('popupStatus').textContent = lion.status;
-      document.getElementById('popupMood').textContent = lion.mood;
-      document.getElementById('popupAge').textContent = lion.age;
-      document.getElementById('popupGender').textContent = lion.isMale ? 'Самец ♂' : 'Самка ♀';
-      document.getElementById('popupHunger').textContent = lion.hunger;
-      document.getElementById('popupThirst').textContent = lion.thirst;
-      document.getElementById('popupHealth').textContent = lion.health;
-      document.getElementById('popupMemory').textContent = lion.memory;
-      document.getElementById('popupCub').textContent = lion.hasCub ? 'Да 🐾 (запрошено через админа)' : 'Нет';
-      document.getElementById('popupId').textContent = lion.id;
-      
-      document.getElementById('hungerFill').style.width = lion.hunger + '%';
-      document.getElementById('thirstFill').style.width = lion.thirst + '%';
-      document.getElementById('healthFill').style.width = lion.health + '%';
-      
-      // Портрет
-      const portraitImg = document.getElementById('popupPortrait');
-      if (lion.portrait && lion.portrait.trim() !== '') {
-        portraitImg.src = lion.portrait;
-        portraitImg.style.display = 'block';
+  function addToLog(type, lion1, lion2, text1, text2, cssClass) {
+    let html = '';
+    if (type === 'solo') html = `💭 <span class="lion-name">${lion1}</span>: <span class="speech">«${text1}»</span>`;
+    else if (type === 'friendly') html = `🤝 <span class="lion-name">${lion1}</span>: «${text1}» → <span class="lion-name">${lion2}</span>: «${text2}»`;
+    else if (['danger','betrayal','drama','exile','promotion','cub_born'].includes(type)) html = `<span class="${cssClass}">${text1} ${text2||''}</span>`;
+    else html = text1;
+    dialogLog.push({ text: html, type: cssClass });
+    if (dialogLog.length > MAX_LOG) dialogLog.shift();
+    updateDialogLog();
+  }
+
+  function updateDialogLog() {
+    document.getElementById('logEntries').innerHTML = dialogLog.map(e => `<div class="entry">${e.text}</div>`).join('');
+  }
+
+  // ==================== ОТРИСОВКА ====================
+  function drawMap() {
+    ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    ctx.fillStyle = '#c2a65c';
+    ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    for (let i=0; i<400; i++) {
+      const gx = Math.floor(Math.random()*MAP_WIDTH/4)*4;
+      const gy = Math.floor(Math.random()*MAP_HEIGHT/4)*4;
+      ctx.fillStyle = Math.random()>0.5 ? '#8fbc3b' : '#6d9a2c';
+      ctx.fillRect(gx, gy, 4, 4);
+    }
+    locations.forEach(loc => {
+      ctx.fillStyle = loc.color;
+      ctx.fillRect(loc.x-12, loc.y-12, 24, 24);
+      if (loc.type === 'rogue_den') { ctx.fillStyle='#ff0000'; ctx.fillRect(loc.x-4,loc.y-4,8,8); }
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px "Courier New"'; ctx.textAlign='center';
+      ctx.fillText(loc.name, loc.x, loc.y-18); ctx.textAlign='start';
+    });
+    lions.forEach(lion => {
+      if (!lion.alive) return;
+      const lx = Math.round(lion.x), ly = Math.round(lion.y);
+      if (imageCache[lion.id] && imageCache[lion.id].complete && imageCache[lion.id].naturalWidth>0) {
+        ctx.drawImage(imageCache[lion.id], lx-14, ly-16, 30, 30);
       } else {
-        portraitImg.style.display = 'none';
+        ctx.fillStyle = lion.isRogue ? '#5a3a1a' : (lion.isMale ? '#c99b3b' : '#dbb45c');
+        ctx.fillRect(lx-8, ly-6, 16, 14);
+        if (lion.isMale && !lion.isRogue) { ctx.fillStyle='#7a4d1a'; ctx.fillRect(lx-10,ly-9,20,8); }
+        if (lion.isRogue) { ctx.fillStyle='#ff0000'; ctx.fillRect(lx-10,ly-9,20,3); }
+        ctx.fillStyle='#fff'; ctx.fillRect(lx-3,ly-2,3,3); ctx.fillRect(lx+2,ly-2,3,3);
+        ctx.fillStyle='#000'; ctx.fillRect(lx-2,ly-1,2,2); ctx.fillRect(lx+3,ly-1,2,2);
       }
-      
-      document.getElementById('character-popup').style.display = 'block';
-    }
-
-    canvas.addEventListener('click', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = MAP_WIDTH / rect.width;
-      const scaleY = MAP_HEIGHT / rect.height;
-      const mouseX = (e.clientX - rect.left) * scaleX;
-      const mouseY = (e.clientY - rect.top) * scaleY;
-      
-      let clicked = null;
-      for (let lion of lions) {
-        if (Math.abs(mouseX - lion.x) < 16 && Math.abs(mouseY - lion.y) < 16) {
-          clicked = lion;
-          break;
-        }
+      // Звёздочка вожака
+      if (lion.status.includes('Вожак')) {
+        ctx.fillStyle = '#ffd700';
+        ctx.font = '14px "Courier New"';
+        ctx.fillText('⭐', lx-5, ly-20);
       }
-      if (clicked) showLionInfo(clicked);
-    });
-
-    document.getElementById('closePopup').addEventListener('click', () => {
-      document.getElementById('character-popup').style.display = 'none';
-    });
-
-    document.getElementById('nextDayBtn').addEventListener('click', simulateDay);
-    
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      // Перезагружаем из исходного массива (сбрасывая смерти)
-      const allLions = [...lions, ...deadLions].map(l => ({
-        ...l,
-        alive: true,
-        health: l.health === 0 ? 50 : l.health,
-        hunger: l.hunger === 0 ? 50 : l.hunger,
-        thirst: l.thirst === 0 ? 50 : l.thirst,
-        mood: 'Обновлён(а)',
-        memory: 'Цикл начался заново.',
-        deathReason: ''
-      }));
-      lions = allLions;
-      deadLions = [];
-      currentDay = 1;
-      preloadImages();
-      updateUI();
-      drawMap();
-    });
-
-    function updateDeadList() {
-      const container = document.getElementById('deadEntries');
-      if (deadLions.length === 0) {
-        container.innerHTML = '<span style="color:#8fbc3b;">✦ Пока все живы ✦</span>';
-        return;
+      // Значок главного охотника
+      if (lion.status.includes('Главн')) {
+        ctx.fillStyle = '#ffaa00';
+        ctx.font = '12px "Courier New"';
+        ctx.fillText('🎯', lx+8, ly-16);
       }
-      container.innerHTML = deadLions.map(d => 
-        `<span class="dead-entry">💀 <strong>${d.name}</strong> (автор: ${d.author}) — ${d.deathReason || 'неизвестная причина'}</span>`
-      ).join('');
-      document.getElementById('deadCount').textContent = deadLions.length;
-    }
+      ctx.fillStyle = lion.health<30?'#ff0000':lion.health<60?'#ffaa00':'#00ff00';
+      ctx.fillRect(lx-5, ly+9, 10, 3);
+      ctx.fillStyle = lion.isRogue?'#ff6666':'#ffffff'; ctx.font='bold 9px "Courier New"'; ctx.textAlign='center';
+      ctx.fillText(lion.name, lx, ly-18);
+      if (lion.hasCub) { ctx.fillStyle='#ff69b4'; ctx.fillText('🐾', lx+10, ly-10); }
+      ctx.textAlign='start';
+    });
+  }
 
-    function updateUI() {
-      document.getElementById('dayCounter').textContent = currentDay;
-      document.getElementById('popCount').textContent = lions.length;
-      document.getElementById('deadCount').textContent = deadLions.length;
-      updateDeadList();
-    }
+  function applyZoom() {
+    canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+  }
 
-    // Запуск
-    initLions();
+  // ==================== ИНФО ОКНО ====================
+  function showLionInfo(lion) {
+    document.getElementById('popupName').textContent = lion.name;
+    document.getElementById('popupAuthor').textContent = lion.author;
+    document.getElementById('popupPride').textContent = lion.pride;
+    document.getElementById('popupStatus').textContent = lion.status;
+    document.getElementById('popupMood').textContent = lion.mood;
+    document.getElementById('popupAction').textContent = lion.currentAction;
+    document.getElementById('popupAge').textContent = lion.age;
+    document.getElementById('popupGender').textContent = lion.isMale ? 'Самец ♂' : 'Самка ♀';
+    document.getElementById('popupHunger').textContent = Math.round(lion.hunger);
+    document.getElementById('popupThirst').textContent = Math.round(lion.thirst);
+    document.getElementById('popupHealth').textContent = Math.round(lion.health);
+    document.getElementById('popupCub').textContent = lion.hasCub ? 'Да 🐾' : 'Нет';
+    document.getElementById('popupId').textContent = lion.id;
+    document.getElementById('popupDaysInPride').textContent = lion.daysInPride || 0;
+    document.getElementById('popupHunts').textContent = lion.huntsParticipated || 0;
+    document.getElementById('popupBattles').textContent = lion.battlesWon || 0;
+    document.getElementById('popupCubsRaised').textContent = lion.cubsRaised || 0;
+    document.getElementById('hungerFill').style.width = lion.hunger+'%';
+    document.getElementById('thirstFill').style.width = lion.thirst+'%';
+    document.getElementById('healthFill').style.width = lion.health+'%';
+    document.getElementById('popupMemories').innerHTML = (lion.memories||[]).slice(-4).map(m=>`<li>${m}</li>`).join('');
+    const portraitImg = document.getElementById('popupPortrait');
+    if (lion.portrait && lion.portrait.trim()) { portraitImg.src=lion.portrait; portraitImg.style.display='block'; }
+    else { portraitImg.style.display='none'; }
+    document.getElementById('character-popup').style.display='block';
+    document.getElementById('overlay').style.display='block';
+  }
+
+  // ==================== ОБРАБОТЧИКИ ====================
+  canvas.addEventListener('click', (e) => {
+    if (isPanning) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = MAP_WIDTH / rect.width;
+    const scaleY = MAP_HEIGHT / rect.height;
+    const mouseX = ((e.clientX-rect.left)/zoomLevel - panX/zoomLevel) * scaleX;
+    const mouseY = ((e.clientY-rect.top)/zoomLevel - panY/zoomLevel) * scaleY;
+    let clicked = null;
+    for (let lion of lions) {
+      if (Math.abs(mouseX-lion.x)<16 && Math.abs(mouseY-lion.y)<16) { clicked=lion; break; }
+    }
+    if (clicked) showLionInfo(clicked);
+  });
+
+  document.getElementById('closePopup').addEventListener('click', ()=>{
+    document.getElementById('character-popup').style.display='none';
+    document.getElementById('overlay').style.display='none';
+  });
+  document.getElementById('overlay').addEventListener('click', ()=>{
+    document.getElementById('character-popup').style.display='none';
+    document.getElementById('overlay').style.display='none';
+  });
+
+  document.getElementById('zoomInBtn').addEventListener('click', ()=>{
+    zoomLevel=Math.min(MAX_ZOOM, zoomLevel+0.2); applyZoom();
+  });
+  document.getElementById('zoomOutBtn').addEventListener('click', ()=>{
+    zoomLevel=Math.max(MIN_ZOOM, zoomLevel-0.2); applyZoom();
+  });
+  document.getElementById('zoomResetBtn').addEventListener('click', ()=>{
+    zoomLevel=1; panX=0; panY=0; applyZoom();
+  });
+
+  container.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const oldZoom = zoomLevel;
+    zoomLevel += e.deltaY > 0 ? -0.15 : 0.15;
+    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomLevel));
+    const zoomRatio = zoomLevel/oldZoom;
+    panX = mouseX - zoomRatio*(mouseX-panX);
+    panY = mouseY - zoomRatio*(mouseY-panY);
+    applyZoom();
+  });
+
+  container.addEventListener('mousedown', (e) => {
+    if (e.target === canvas || e.target === container) {
+      isPanning=true; panStartX=e.clientX; panStartY=e.clientY;
+      panStartPanX=panX; panStartPanY=panY; container.style.cursor='grabbing';
+    }
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    panX = panStartPanX + (e.clientX-panStartX);
+    panY = panStartPanY + (e.clientY-panStartY);
+    applyZoom();
+  });
+  window.addEventListener('mouseup', ()=>{ isPanning=false; container.style.cursor='grab'; });
+
+  document.getElementById('nextDayBtn').addEventListener('click', ()=>{ simulateDay(); resetAutoTimer(); });
+  
+  let autoMode = false;
+  document.getElementById('autoToggleBtn').addEventListener('click', ()=>{
+    autoMode = !autoMode;
+    const btn = document.getElementById('autoToggleBtn');
+    if (autoMode) { btn.textContent='⏸ СТОП АВТО'; btn.classList.add('auto-active'); startAutoTimer(); }
+    else { btn.textContent='▶ АВТО-ЖИЗНЬ'; btn.classList.remove('auto-active'); stopAutoTimer(); }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    stopAutoTimer(); autoMode=false;
+    document.getElementById('autoToggleBtn').textContent='▶ АВТО-ЖИЗНЬ';
+    document.getElementById('autoToggleBtn').classList.remove('auto-active');
+    const allLions = [...lions, ...deadLions].map(l=>({
+      ...l, alive:true, health:l.health===0?50:l.health,
+      hunger:l.hunger===0?50:l.hunger, thirst:l.thirst===0?50:l.thirst,
+      mood:'Обновлён(а)', currentAction:'Пробуждается',
+      memories:[...(l.memories||[]), 'Цикл перерождения'],
+      deathReason:'', targetX:l.x, targetY:l.y,
+      daysInPride: l.pride !== 'Одиночка' ? l.daysInPride : 0
+    }));
+    lions=allLions; deadLions=[]; currentDay=1; secondsUntilNextDay=1200;
+    dialogLog=[{text:'🌅 Новый цикл. Саванна возрождается...'}];
+    preloadImages(); updateUI(); updateDialogLog(); drawMap(); updateTimerDisplay();
+  });
+
+  // ==================== ТАЙМЕР ====================
+  function startAutoTimer() {
+    stopAutoTimer();
+    autoTimerInterval = setInterval(() => {
+      secondsUntilNextDay--;
+      updateTimerDisplay();
+      if (secondsUntilNextDay <= 0) { simulateDay(); secondsUntilNextDay=1200; }
+    }, 1000);
+  }
+  function stopAutoTimer() { if (autoTimerInterval) clearInterval(autoTimerInterval); autoTimerInterval=null; }
+  function resetAutoTimer() { secondsUntilNextDay=1200; updateTimerDisplay(); if (autoMode) { stopAutoTimer(); startAutoTimer(); } }
+  function updateTimerDisplay() {
+    const min=Math.floor(secondsUntilNextDay/60), sec=secondsUntilNextDay%60;
+    document.getElementById('timerDisplay').textContent = `⏳ След. день: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function updateDeadList() {
+    const cont = document.getElementById('deadEntries');
+    if (deadLions.length===0) cont.innerHTML='<span style="color:#8fbc3b;">✦ Пока все живы ✦</span>';
+    else cont.innerHTML = deadLions.map(d=>
+      `<span class="dead-entry">💀 <strong>${d.name}</strong> (${d.author}) — ${d.deathReason||'неизвестно'}</span>`
+    ).join('');
+    document.getElementById('deadCount').textContent = deadLions.length;
+  }
+  function updateUI() {
+    document.getElementById('dayCounter').textContent = currentDay;
+    document.getElementById('popCount').textContent = lions.length;
+    document.getElementById('rogueCount').textContent = lions.filter(l=>l.isRogue).length;
+    updateDeadList(); updateTimerDisplay();
+  }
+
+  function animationLoop() {
+    if (!autoMode || autoTimerInterval===null) moveLions();
+    else moveLions();
     drawMap();
-    updateUI();
+    requestAnimationFrame(animationLoop);
+  }
 
-    // Перерисовка при загрузке всех изображений
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        preloadImages();
-        drawMap();
-      }, 500);
-    });
+  initLions(); drawMap(); applyZoom(); updateUI(); updateDialogLog(); updateTimerDisplay(); animationLoop();
+  window.addEventListener('load', ()=>{ setTimeout(()=>{ preloadImages(); drawMap(); }, 500); });
 
-  })();
+})();
 </script>
 
 </body>
