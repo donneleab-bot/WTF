@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Выживание Куриц — Гигантский Остров (Плавный переход)</title>
+    <title>Выживание Куриц — Остров с Анимированной Водой</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: #0d1b2a;
+            background: #0a1a2a;
             cursor: grab;
         }
         body.dragging { cursor: grabbing; }
@@ -62,108 +62,169 @@
         mapCanvas.height = MAP_SIZE;
         const mapCtx = mapCanvas.getContext('2d');
 
-        // Природная палитра
+        // Палитра
         const C = {
-            grass1: '#3E5C2B', // Тёмная трава (тень)
-            grass2: '#4E6E36', // Средне-тёмная
-            grass3: '#5F8244', // Основная
-            grass4: '#769B56', // Светлая
-            grass5: '#8DB36A', // Блик
-            sand: '#D9C49A',   // Песок
-            sandDark: '#BFA87A' // Тень на песке
+            grass1: '#354F2A',
+            grass2: '#425E33',
+            grass3: '#506E3E',
+            grass4: '#62824D',
+            grass5: '#779B5F',
+            sand: '#C9B896',
+            sandDark: '#B09F7A',
+            water1: '#1E3A5F', // Тёмная вода
+            water2: '#2E5077', // Светлая вода (для анимации)
+            waterEdge: '#3E6A8F' // Блик на воде
         };
 
-        // --- УЛУЧШЕННЫЙ ШУМ (Плавный переход) ---
-        // Используем фрактальный шум с интерполяцией
+        // Шум для травы
         function smoothNoise(x, y) {
-            // Много октав с разными частотами для естественности
             let n = 0;
             n += Math.sin(x * 0.008) * Math.cos(y * 0.008) * 0.4;
             n += Math.sin(x * 0.02) * Math.cos(y * 0.02) * 0.3;
             n += Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.2;
             n += Math.sin(x * 0.12) * Math.cos(y * 0.12) * 0.1;
-            return (n + 1) / 2; // 0..1
+            return (n + 1) / 2;
+        }
+
+        // Шум для формы острова
+        function edgeNoise(x, y) {
+            let n = 0;
+            n += Math.sin(x * 0.005 + y * 0.003) * 300;
+            n += Math.sin(x * 0.01 - y * 0.02) * 150;
+            n += Math.sin(x * 0.03 + y * 0.04) * 80;
+            n += Math.sin(x * 0.08 - y * 0.06) * 30;
+            return n;
         }
 
         const centerX = MAP_SIZE / 2;
         const centerY = MAP_SIZE / 2;
         const baseRadius = 800;
 
-        // --- ГЕНЕРАЦИЯ ОСТРОВА ---
-        for (let y = 0; y < MAP_SIZE; y++) {
-            for (let x = 0; x < MAP_SIZE; x++) {
-                const dx = x - centerX;
-                const dy = y - centerY;
-                const dist = Math.sqrt(dx*dx + dy*dy);
+        let isMapReady = false;
 
-                // Рваные края (оставляем как было)
-                const edgeNoise = smoothNoise(x * 3, y * 3) * 150 - 75;
-                const finalDist = dist + edgeNoise;
+        // --- ГЕНЕРАЦИЯ ---
+        function generateMap() {
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
 
-                if (finalDist < baseRadius) {
-                    const edgeDist = baseRadius - finalDist;
+                    const n = edgeNoise(x, y);
+                    const finalDist = dist + n;
 
-                    if (edgeDist < 40) {
-                        // ПЕСОК (не трогаем)
-                        if (smoothNoise(x * 20, y * 20) > 0.5) mapCtx.fillStyle = C.sand;
-                        else mapCtx.fillStyle = C.sandDark;
+                    if (finalDist < baseRadius) {
+                        const edgeDist = baseRadius - finalDist;
+
+                        // Перемешка песка и травы вокруг воды
+                        if (edgeDist < 60) {
+                            // Используем шум для смешивания
+                            const mix = smoothNoise(x * 15, y * 15);
+                            
+                            if (mix > 0.7) {
+                                // Трава
+                                mapCtx.fillStyle = C.grass2;
+                            } else if (mix > 0.4) {
+                                // Смесь
+                                mapCtx.fillStyle = C.sandDark;
+                            } else {
+                                // Песок
+                                if (smoothNoise(x * 20, y * 20) > 0.5) mapCtx.fillStyle = C.sand;
+                                else mapCtx.fillStyle = C.sandDark;
+                            }
+                        } else {
+                            // Трава (внутри)
+                            const n1 = smoothNoise(x, y);
+                            const n2 = smoothNoise(x * 3, y * 3);
+                            const noise = n1 * 0.6 + n2 * 0.4;
+                            
+                            if (noise > 0.75) mapCtx.fillStyle = C.grass5;
+                            else if (noise > 0.55) mapCtx.fillStyle = C.grass4;
+                            else if (noise > 0.35) mapCtx.fillStyle = C.grass3;
+                            else if (noise > 0.15) mapCtx.fillStyle = C.grass2;
+                            else mapCtx.fillStyle = C.grass1;
+                        }
+                        mapCtx.fillRect(x, y, 1, 1);
                     } else {
-                        // ТРАВА (ПЛАВНЫЙ ПЕРЕХОД)
-                        // Используем два слоя шума для мягких переходов
-                        const n1 = smoothNoise(x, y);
-                        const n2 = smoothNoise(x * 2, y * 2); // Второй слой для детализации
+                        // Вода (с текстурой)
+                        mapCtx.fillStyle = C.water1;
+                        mapCtx.fillRect(x, y, 1, 1);
                         
-                        // Смешиваем: базовый шум + мелкие детали
-                        const n = n1 * 0.7 + n2 * 0.3;
-                        
-                        if (n > 0.8) mapCtx.fillStyle = C.grass5;
-                        else if (n > 0.6) mapCtx.fillStyle = C.grass4;
-                        else if (n > 0.4) mapCtx.fillStyle = C.grass3;
-                        else if (n > 0.2) mapCtx.fillStyle = C.grass2;
-                        else mapCtx.fillStyle = C.grass1;
+                        // Блики на воде
+                        if (smoothNoise(x * 30, y * 30) > 0.8) {
+                            mapCtx.fillStyle = C.waterEdge;
+                            mapCtx.fillRect(x, y, 1, 1);
+                        }
                     }
+                }
+            }
+
+            // Травинки
+            for (let i = 0; i < 8000; i++) {
+                const x = Math.floor(Math.random() * MAP_SIZE);
+                const y = Math.floor(Math.random() * MAP_SIZE);
+                
+                const pixel = mapCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
+                    mapCtx.fillStyle = C.grass1;
+                    mapCtx.fillRect(x, y, 2, 2);
+                    mapCtx.fillStyle = C.grass5;
                     mapCtx.fillRect(x, y, 1, 1);
                 }
             }
+
+            // Цветы
+            for (let i = 0; i < 3000; i++) {
+                const x = Math.floor(Math.random() * MAP_SIZE);
+                const y = Math.floor(Math.random() * MAP_SIZE);
+                
+                const pixel = mapCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
+                    mapCtx.fillStyle = 'rgba(0,0,0,0.2)';
+                    mapCtx.fillRect(x, y+1, 3, 1);
+                    
+                    mapCtx.fillStyle = '#E8E0D0';
+                    mapCtx.fillRect(x, y-1, 1, 1);
+                    mapCtx.fillRect(x, y+1, 1, 1);
+                    mapCtx.fillRect(x-1, y, 1, 1);
+                    mapCtx.fillRect(x+1, y, 1, 1);
+                    
+                    mapCtx.fillStyle = '#D4B04A';
+                    mapCtx.fillRect(x, y, 1, 1);
+                }
+            }
+
+            isMapReady = true;
         }
 
-        // --- ТЕКСТУРА (Травинки) ---
-        for (let i = 0; i < 10000; i++) {
-            const x = Math.floor(Math.random() * MAP_SIZE);
-            const y = Math.floor(Math.random() * MAP_SIZE);
-            
-            const pixel = mapCtx.getImageData(x, y, 1, 1).data;
-            if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
-                mapCtx.fillStyle = C.grass1;
-                mapCtx.fillRect(x, y, 2, 2);
-                mapCtx.fillStyle = C.grass5;
-                mapCtx.fillRect(x, y, 1, 1);
-            }
-        }
-
-        // --- ЦВЕТЫ ---
-        for (let i = 0; i < 3000; i++) {
-            const x = Math.floor(Math.random() * MAP_SIZE);
-            const y = Math.floor(Math.random() * MAP_SIZE);
-            
-            const pixel = mapCtx.getImageData(x, y, 1, 1).data;
-            if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
-                mapCtx.fillStyle = 'rgba(0,0,0,0.2)';
-                mapCtx.fillRect(x, y+1, 3, 1);
-                
-                mapCtx.fillStyle = '#FFFFFF';
-                mapCtx.fillRect(x, y-1, 1, 1);
-                mapCtx.fillRect(x, y+1, 1, 1);
-                mapCtx.fillRect(x-1, y, 1, 1);
-                mapCtx.fillRect(x+1, y, 1, 1);
-                
-                mapCtx.fillStyle = '#FFD700';
-                mapCtx.fillRect(x, y, 1, 1);
-            }
-        }
+        setTimeout(generateMap, 100);
 
         // ==========================================
-        // 3. ОТРИСОВКА
+        // 3. АНИМАЦИЯ ВОДЫ (Два кадра)
+        // ==========================================
+        // Создаём второй холст для анимации воды
+        const waterCanvas = document.createElement('canvas');
+        waterCanvas.width = MAP_SIZE;
+        waterCanvas.height = MAP_SIZE;
+        const waterCtx = waterCanvas.getContext('2d');
+
+        // Заполняем его светлой водой
+        waterCtx.fillStyle = C.water2;
+        waterCtx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+        // Рисуем блики на воде
+        for (let i = 0; i < 5000; i++) {
+            const x = Math.floor(Math.random() * MAP_SIZE);
+            const y = Math.floor(Math.random() * MAP_SIZE);
+            
+            waterCtx.fillStyle = C.waterEdge;
+            waterCtx.fillRect(x, y, 2, 2);
+        }
+
+        let waterFrame = 0;
+
+        // ==========================================
+        // 4. ОТРИСОВКА
         // ==========================================
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -173,7 +234,28 @@
             ctx.scale(zoom, zoom);
             ctx.translate(-cameraX, -cameraY);
 
-            ctx.drawImage(mapCanvas, 0, 0);
+            if (isMapReady) {
+                // 1. Рисуем карту (землю и песок)
+                ctx.drawImage(mapCanvas, 0, 0);
+
+                // 2. Рисуем анимированную воду поверх (только там, где прозрачно)
+                // Но у нас вода уже есть в mapCanvas, поэтому мы просто накладываем
+                // полупрозрачный слой воды для анимации
+                ctx.globalAlpha = 0.3; // Полупрозрачность для эффекта
+                if (waterFrame === 0) {
+                    ctx.drawImage(waterCanvas, 0, 0);
+                } else {
+                    // Второй кадр (смещение)
+                    ctx.drawImage(waterCanvas, 0, 0);
+                }
+                ctx.globalAlpha = 1.0;
+            } else {
+                ctx.fillStyle = '#1a2a1f';
+                ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+                ctx.fillStyle = 'white';
+                ctx.font = '20px sans-serif';
+                ctx.fillText("Генерация карты...", MAP_SIZE/2 - 100, MAP_SIZE/2);
+            }
 
             ctx.restore();
 
@@ -186,7 +268,7 @@
         }
 
         // ==========================================
-        // 4. УПРАВЛЕНИЕ
+        // 5. УПРАВЛЕНИЕ
         // ==========================================
         window.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -198,7 +280,7 @@
             if (e.deltaY < 0) {
                 zoom = Math.min(zoom * 1.1, 8);
             } else {
-                zoom = Math.max(zoom / 1.1, 0.2);
+                zoom = Math.max(zoom / 1.1, 0.5);
             }
 
             cameraX = worldX - (mouseX / zoom);
@@ -235,6 +317,14 @@
             }
         });
 
+        // ==========================================
+        // 6. АНИМАЦИЯ (Смена кадров воды)
+        // ==========================================
+        setInterval(() => {
+            waterFrame = 1 - waterFrame; // Переключаем 0 и 1
+            draw();
+        }, 1000); // Каждую секунду
+
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -243,6 +333,9 @@
 
         window.addEventListener('resize', resize);
         resize();
+
+        // Запускаем отрисовку
+        draw();
 
     </script>
 </body>
