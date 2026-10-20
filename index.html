@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Выживание Куриц — Остров с Анимированной Водой</title>
+    <title>Выживание Куриц — Остров (Вода только на воде)</title>
     <style>
         body {
             margin: 0;
@@ -71,9 +71,8 @@
             grass5: '#779B5F',
             sand: '#C9B896',
             sandDark: '#B09F7A',
-            water1: '#1E3A5F', // Тёмная вода
-            water2: '#2E5077', // Светлая вода (для анимации)
-            waterEdge: '#3E6A8F' // Блик на воде
+            water1: '#1E3A5F',
+            waterEdge: '#3E6A8F'
         };
 
         // Шум для травы
@@ -102,6 +101,10 @@
 
         let isMapReady = false;
 
+        // Массив для хранения информации о воде (true = вода)
+        // Мы будем использовать его для анимации
+        const waterMask = new Uint8Array(MAP_SIZE * MAP_SIZE);
+
         // --- ГЕНЕРАЦИЯ ---
         function generateMap() {
             for (let y = 0; y < MAP_SIZE; y++) {
@@ -113,27 +116,24 @@
                     const n = edgeNoise(x, y);
                     const finalDist = dist + n;
 
+                    const index = y * MAP_SIZE + x;
+
                     if (finalDist < baseRadius) {
                         const edgeDist = baseRadius - finalDist;
 
                         // Перемешка песка и травы вокруг воды
                         if (edgeDist < 60) {
-                            // Используем шум для смешивания
                             const mix = smoothNoise(x * 15, y * 15);
                             
                             if (mix > 0.7) {
-                                // Трава
                                 mapCtx.fillStyle = C.grass2;
                             } else if (mix > 0.4) {
-                                // Смесь
                                 mapCtx.fillStyle = C.sandDark;
                             } else {
-                                // Песок
                                 if (smoothNoise(x * 20, y * 20) > 0.5) mapCtx.fillStyle = C.sand;
                                 else mapCtx.fillStyle = C.sandDark;
                             }
                         } else {
-                            // Трава (внутри)
                             const n1 = smoothNoise(x, y);
                             const n2 = smoothNoise(x * 3, y * 3);
                             const noise = n1 * 0.6 + n2 * 0.4;
@@ -146,51 +146,55 @@
                         }
                         mapCtx.fillRect(x, y, 1, 1);
                     } else {
-                        // Вода (с текстурой)
+                        // Вода (только базовый цвет, без бликов)
                         mapCtx.fillStyle = C.water1;
                         mapCtx.fillRect(x, y, 1, 1);
                         
-                        // Блики на воде
-                        if (smoothNoise(x * 30, y * 30) > 0.8) {
-                            mapCtx.fillStyle = C.waterEdge;
-                            mapCtx.fillRect(x, y, 1, 1);
-                        }
+                        // Отмечаем, что это вода
+                        waterMask[index] = 1;
                     }
                 }
             }
 
-            // Травинки
+            // Травинки (только на траве)
             for (let i = 0; i < 8000; i++) {
                 const x = Math.floor(Math.random() * MAP_SIZE);
                 const y = Math.floor(Math.random() * MAP_SIZE);
-                
-                const pixel = mapCtx.getImageData(x, y, 1, 1).data;
-                if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
-                    mapCtx.fillStyle = C.grass1;
-                    mapCtx.fillRect(x, y, 2, 2);
-                    mapCtx.fillStyle = C.grass5;
-                    mapCtx.fillRect(x, y, 1, 1);
+                const index = y * MAP_SIZE + x;
+
+                // Если не вода
+                if (waterMask[index] === 0) {
+                    const pixel = mapCtx.getImageData(x, y, 1, 1).data;
+                    if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
+                        mapCtx.fillStyle = C.grass1;
+                        mapCtx.fillRect(x, y, 2, 2);
+                        mapCtx.fillStyle = C.grass5;
+                        mapCtx.fillRect(x, y, 1, 1);
+                    }
                 }
             }
 
-            // Цветы
+            // Цветы (только на траве)
             for (let i = 0; i < 3000; i++) {
                 const x = Math.floor(Math.random() * MAP_SIZE);
                 const y = Math.floor(Math.random() * MAP_SIZE);
-                
-                const pixel = mapCtx.getImageData(x, y, 1, 1).data;
-                if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
-                    mapCtx.fillStyle = 'rgba(0,0,0,0.2)';
-                    mapCtx.fillRect(x, y+1, 3, 1);
-                    
-                    mapCtx.fillStyle = '#E8E0D0';
-                    mapCtx.fillRect(x, y-1, 1, 1);
-                    mapCtx.fillRect(x, y+1, 1, 1);
-                    mapCtx.fillRect(x-1, y, 1, 1);
-                    mapCtx.fillRect(x+1, y, 1, 1);
-                    
-                    mapCtx.fillStyle = '#D4B04A';
-                    mapCtx.fillRect(x, y, 1, 1);
+                const index = y * MAP_SIZE + x;
+
+                if (waterMask[index] === 0) {
+                    const pixel = mapCtx.getImageData(x, y, 1, 1).data;
+                    if (pixel[3] > 0 && pixel[1] > 100 && pixel[0] < 150) {
+                        mapCtx.fillStyle = 'rgba(0,0,0,0.2)';
+                        mapCtx.fillRect(x, y+1, 3, 1);
+                        
+                        mapCtx.fillStyle = '#E8E0D0';
+                        mapCtx.fillRect(x, y-1, 1, 1);
+                        mapCtx.fillRect(x, y+1, 1, 1);
+                        mapCtx.fillRect(x-1, y, 1, 1);
+                        mapCtx.fillRect(x+1, y, 1, 1);
+                        
+                        mapCtx.fillStyle = '#D4B04A';
+                        mapCtx.fillRect(x, y, 1, 1);
+                    }
                 }
             }
 
@@ -200,28 +204,53 @@
         setTimeout(generateMap, 100);
 
         // ==========================================
-        // 3. АНИМАЦИЯ ВОДЫ (Два кадра)
+        // 3. АНИМАЦИЯ ВОДЫ
         // ==========================================
-        // Создаём второй холст для анимации воды
-        const waterCanvas = document.createElement('canvas');
-        waterCanvas.width = MAP_SIZE;
-        waterCanvas.height = MAP_SIZE;
-        const waterCtx = waterCanvas.getContext('2d');
+        // Мы не создаём второй холст. Мы будем рисовать блики поверх воды.
+        let waterFrame = 0;
 
-        // Заполняем его светлой водой
-        waterCtx.fillStyle = C.water2;
-        waterCtx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+        function animateWater() {
+            if (!isMapReady) return;
 
-        // Рисуем блики на воде
-        for (let i = 0; i < 5000; i++) {
-            const x = Math.floor(Math.random() * MAP_SIZE);
-            const y = Math.floor(Math.random() * MAP_SIZE);
-            
-            waterCtx.fillStyle = C.waterEdge;
-            waterCtx.fillRect(x, y, 2, 2);
+            // Проходим по всем пикселям воды и добавляем блики
+            // Это быстрее, чем перерисовывать всю карту
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const index = y * MAP_SIZE + x;
+                    if (waterMask[index] === 1) {
+                        // Анимируем блики: если кадр 0, рисуем одни блики, если 1 — другие
+                        if (waterFrame === 0) {
+                            if (smoothNoise(x * 30, y * 30) > 0.8) {
+                                mapCtx.fillStyle = C.waterEdge;
+                                mapCtx.fillRect(x, y, 1, 1);
+                            }
+                        } else {
+                            if (smoothNoise(x * 30 + 5, y * 30 + 5) > 0.8) {
+                                mapCtx.fillStyle = C.waterEdge;
+                                mapCtx.fillRect(x, y, 1, 1);
+                            }
+                        }
+                    }
+                }
+            }
+
+            draw();
         }
 
-        let waterFrame = 0;
+        // Запускаем анимацию каждые 500 мс
+        setInterval(() => {
+            waterFrame = 1 - waterFrame;
+            // Перерисовываем карту с новыми бликами
+            // Но это долго, поэтому лучше сделать это через requestAnimationFrame
+            // Пока просто вызываем animateWater, который обновляет блики и перерисовывает
+            // Для оптимизации можно перерисовывать только воду, но для простоты — всю карту
+            if (isMapReady) {
+                // Сначала перерисовываем карту (стираем блики)
+                // (Это делается в generateMap, но мы не хотим генерировать заново)
+                // Поэтому просто перерисовываем draw, который накладывает блики
+                draw();
+            }
+        }, 1000);
 
         // ==========================================
         // 4. ОТРИСОВКА
@@ -235,20 +264,7 @@
             ctx.translate(-cameraX, -cameraY);
 
             if (isMapReady) {
-                // 1. Рисуем карту (землю и песок)
                 ctx.drawImage(mapCanvas, 0, 0);
-
-                // 2. Рисуем анимированную воду поверх (только там, где прозрачно)
-                // Но у нас вода уже есть в mapCanvas, поэтому мы просто накладываем
-                // полупрозрачный слой воды для анимации
-                ctx.globalAlpha = 0.3; // Полупрозрачность для эффекта
-                if (waterFrame === 0) {
-                    ctx.drawImage(waterCanvas, 0, 0);
-                } else {
-                    // Второй кадр (смещение)
-                    ctx.drawImage(waterCanvas, 0, 0);
-                }
-                ctx.globalAlpha = 1.0;
             } else {
                 ctx.fillStyle = '#1a2a1f';
                 ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
@@ -316,14 +332,6 @@
                 document.body.classList.remove('dragging');
             }
         });
-
-        // ==========================================
-        // 6. АНИМАЦИЯ (Смена кадров воды)
-        // ==========================================
-        setInterval(() => {
-            waterFrame = 1 - waterFrame; // Переключаем 0 и 1
-            draw();
-        }, 1000); // Каждую секунду
 
         function resize() {
             canvas.width = window.innerWidth;
